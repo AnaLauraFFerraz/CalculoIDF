@@ -66,3 +66,18 @@ merged_df.drop('Maxima_y', axis=1, inplace=True)
 merged_df.rename(columns={'Maxima_x': 'Maxima'}, inplace=True)
 
 merged_df.reset_index(inplace=True)
+
+# MÁXIMA DE CADA ANO HIDROLÓGICO
+
+merged_df["AnoHidrologico"] = merged_df["Data"].apply(
+    lambda x: x.year if x.month >= 10 else x.year - 1)
+
+ano_hidrologico_df = merged_df.groupby("AnoHidrologico")[
+    "Maxima"].max().reset_index()
+
+ano_hidrologico_df = ano_hidrologico_df.rename(columns={"Maxima": "Pmax"})
+
+
+merged_df.to_csv('dadosConsistidos.csv', sep=';')
+bruto_df.to_csv('dadosBrutos.csv', sep=';')
+ano_hidrologico_df.to_csv('anoHidrologico.csv', sep=';')
