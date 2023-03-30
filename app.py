@@ -107,35 +107,27 @@ teste_GB = pd.read_csv("./csv/Tabela_Teste_GB.csv", sep=",",
 Tcri_10 = teste_GB.loc[teste_GB['Number of observations']
                        == tamanho_amostra, 'Upper 10% Significance Level'].values[0]
 
-T_maior = 200
-result_maior = "outlier"
 i = 2
+maior_valor = "outlier"
 
 if T_maior > Tcri_10:
-    while result_maior == "outlier" and i < tamanho_amostra:
-        print("Entrou no while\n")
+    while maior_valor == "outlier" and i < tamanho_amostra-1:
         T_maior = (ano_hidrologico_df['Pmax_anual'].nlargest(
             i).iloc[1] - media_Pmax)/std_Pmax
-        print("Para i = ", i, ", T_maior = ", T_maior)
-
-        if T_maior > Tcri_10:
-            result_maior = "outlier"
-            print("Entrou no if 2")
-        else:
-            result_maior = ""
-            print("Else do if 2, tudo certo")
-
         i = i + 1
+        if T_maior > Tcri_10:
+            maior_valor = "outlier"
+        else:
+            maior_valor = T_maior
 
-    if i < len(ano_hidrologico_df):
+    if i < tamanho_amostra-1:
         T_segundo_maior = (ano_hidrologico_df['Pmax_anual'].nlargest(
-            i).iloc[i] - media_Pmax)/std_Pmax
-        print("T_segundo_maior = ", T_segundo_maior)
+            i).iloc[i - 1] - media_Pmax)/std_Pmax
     else:
-        print("Não há segundo valor máximo")
+        print("\nNão há segundo valor máximo")
+        T_segundo_maior = 0
 
-
-kN_10 = Tcri_10
+kN_10 = -3.62201 + 6.28446*(tamanho_amostra**0.25) - 2.49835*(tamanho_amostra**0.5) + 0.491436*(tamanho_amostra**0.75) - 0.037911*tamanho_amostra
 
 Xh_maior = np.exp(media_ln_Pmax + kN_10 * std_ln_Pmax)
 Xl_menor = np.exp(media_ln_Pmax - kN_10 * std_ln_Pmax)
