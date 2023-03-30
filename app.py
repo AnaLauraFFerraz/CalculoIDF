@@ -50,3 +50,19 @@ consist_df = consist_df.drop(final_drop_range.index)
 
 consist_df = consist_df.reset_index(drop=True)
 bruto_df = bruto_df.reset_index(drop=True)
+
+# PREENCHER VALORES VAZIOS DE MAXIMA COM OS DADOS BRUTOS
+
+consist_df.set_index('Data', inplace=True)
+bruto_df.set_index('Data', inplace=True)
+
+merged_df = consist_df.merge(
+    bruto_df, left_index=True, right_index=True, how='left')
+
+merged_df['Maxima_x'].fillna(merged_df['Maxima_y'], inplace=True)
+
+merged_df.drop('Maxima_y', axis=1, inplace=True)
+
+merged_df.rename(columns={'Maxima_x': 'Maxima'}, inplace=True)
+
+merged_df.reset_index(inplace=True)
