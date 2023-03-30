@@ -35,3 +35,18 @@ consist_df.rename(columns={'index': 'Data'}, inplace=True)
 # Para os Dados Brutos => NivelConsistência = 1
 
 bruto_df = main_df.loc[main_df['NivelConsistencia'] == 1, ["Data", "Maxima"]]
+
+# EXCLUIR PRIMEIROS E ÚLTIMOS DADOS FORA DO CICLO
+
+index_first_sep = consist_df.loc[consist_df['Data'].dt.month == 9].index[0]
+index_last_oct = consist_df.loc[consist_df['Data'].dt.month == 10].index[-1]
+index_last = consist_df.shape[0] - 1
+
+inicial_drop_range = consist_df.iloc[0:index_first_sep+1]
+final_drop_range = consist_df.iloc[index_last_oct:index_last + 1]
+
+consist_df = consist_df.drop(inicial_drop_range.index)
+consist_df = consist_df.drop(final_drop_range.index)
+
+consist_df = consist_df.reset_index(drop=True)
+bruto_df = bruto_df.reset_index(drop=True)
