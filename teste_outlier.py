@@ -1,83 +1,91 @@
 import pandas as pd
 import numpy as np
+import pickle
 
-from app import ano_hidrologico_df
 
-# Simplificar cabeçalho e excluir valores não utilizados da tabela Teste GB
+def load_data(file_path):
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
+
+
+input_file_path = "hydrological_year_data.pkl"
+hydrological_year_data = load_data(input_file_path)
+
 teste_GB = pd.read_csv("./csv/Tabela_Teste_GB.csv", sep=",",
                        encoding='ISO 8859-1', decimal=",", index_col=False)
 
 
-Pmedia_anual = ano_hidrologico_df['Pmax_anual'].mean()
-ln_Pmedia_anual = ano_hidrologico_df['ln_Pmax_anual'].mean()
+def calculate_statistics(df):
+    """Calculate mean and standard deviation of Pmax_anual and ln_Pmax_anual."""
+    p_mean = df['Pmax_anual'].mean()
+    ln_p_mean = df['ln_Pmax_anual'].mean()
 
-Pdesvp_anual = ano_hidrologico_df['Pmax_anual'].std()
-ln_Pdesvp_anual = ano_hidrologico_df['ln_Pmax_anual'].std()
+    p_std = df['Pmax_anual'].std()
+    ln_p_std = df['ln_Pmax_anual'].std()
 
-tam_amostra = ano_hidrologico_df.shape[0] - 1
-
-Tcri_10 = teste_GB.loc[teste_GB['Number of observations']
-                       == tam_amostra, 'Upper 10% Significance Level'].values[0]
-
-kN_10 = -3.62201 + 6.28446*(tam_amostra**0.25) - 2.49835*(
-    tam_amostra**0.5) + 0.491436*(tam_amostra**0.75) - 0.037911*tam_amostra
-
-Xh = np.exp(ln_Pmedia_anual + kN_10 * ln_Pdesvp_anual)
-Xl = np.exp(ln_Pmedia_anual - kN_10 * ln_Pdesvp_anual)
-
-# VALORES MÁXIMOS
-
-result_final_max = "outlier"
-
-while result_final_max == "outlier":
-    Pmax_anual = ano_hidrologico_df['Pmax_anual'].max()
-    T_maior = (Pmax_anual - Pmedia_anual)/Pdesvp_anual
-
-    if T_maior > Tcri_10:
-        result1_max = "outlier"
-    else:
-        result1_max = ""
-
-    if Pmax_anual > Xh:
-        result2_max = "outlier"
-    else:
-        result2_max = ""
-
-    if result1_max == "outlier" and result2_max == "outlier":
-        result_final_max = "outlier"
-    else:
-        result_final_max = ""
-
-    if result_final_max == "outlier":
-        ano_hidrologico_df = ano_hidrologico_df.drop(
-            labels=ano_hidrologico_df[ano_hidrologico_df['Pmax_anual'] == Pmax_anual].index)
-
-# VALORES MÍNIMOS
-
-result_final_min = "outlier"
-
-while result_final_min == "outlier":
-    Pmin_anual = ano_hidrologico_df['Pmax_anual'].min()
-    T_menor = (Pmedia_anual - Pmin_anual)/Pdesvp_anual
-
-    if T_menor > Tcri_10:
-        result1_min = "outlier"
-    else:
-        result1_min = ""
-
-    if Pmin_anual < Xl:
-        result2_min = "outlier"
-    else:
-        result2_min = ""
-
-    if result1_min == "outlier" and result2_max == "outlier":
-        result_final_min = "outlier"
-    else:
-        result_final_min = ""
-
-    if result_final_min == "outlier":
-        ano_hidrologico_df = ano_hidrologico_df.drop(
-            labels=ano_hidrologico_df[ano_hidrologico_df['Pmax_anual_menor'] == Pmax_anual].index)
+    return p_mean, ln_p_mean, p_std, ln_p_std
 
 
-ano_hidrologico_df.to_csv('anoHidrologico.csv', sep=',')
+def calc_critical_values(test_gb_data, sample_size, ln_p_mean, ln_p_std):
+    """Calculate the critical values t_crit_10, x_h and x_l."""
+    t_crit_10 = test_gb_data.loc[test_gb_data['Number of observations']
+                                 == sample_size, 'Upper 10% Significance Level'].values[0]
+
+    k_n_10 = -3.62201 + 6.28446*(sample_size**0.25) - 2.49835*(
+        sample_size**0.5) + 0.491436*(sample_size**0.75) - 0.037911*sample_size
+
+    x_h = np.exp(ln_p_mean + k_n_10 * ln_p_std)
+    x_l = np.exp(ln_p_mean - k_n_10 * ln_p_std)
+
+    return t_crit_10, x_h, x_l
+
+
+def remove_outliers(df, p_mean, p_std, t_crit_10, x_h, x_l):
+    """Remove outlier values from the data based on the critical values."""
+    outlier = True
+
+    while outlier:
+        p_max = df['Pmax_anual'].max()
+        t_larger = (p_max - p_mean) / p_std
+
+        if t_larger > t_crit_10 and p_max > x_h:
+            outlier = True
+        else:
+            outlier = False
+
+        if outlier:
+            df = df.drop(labels=df[df['Pmax_anual'] == p_max].index)
+
+    outlier = True
+
+    while outlier:
+        p_min = df['Pmax_anual'].min()
+        t_smaller = (p_mean - p_min) / p_std
+
+        if t_smaller > t_crit_10 and p_min < x_l:
+            outlier = True
+        else:
+            outlier = False
+
+        if outlier:
+            df = df.drop(labels=df[df['Pmax_anual'] == p_min].index)
+
+    return df
+
+
+def main():
+    p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(
+        hydrological_year_data)
+
+    sample_size = hydrological_year_data.shape[0] - 1
+
+    t_crit_10, x_h, x_l = calc_critical_values(
+        teste_GB, sample_size, ln_p_mean, ln_p_std)
+
+    no_outliers_data = remove_outliers(
+        hydrological_year_data, p_mean, p_std, t_crit_10, x_h, x_l)
+
+    return no_outliers_data
+
+if __name__ == "__main__":
+    main()
