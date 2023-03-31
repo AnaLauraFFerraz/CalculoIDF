@@ -81,7 +81,7 @@ ano_hidrologico_df = ano_hidrologico_df.rename(
 
 ano_hidrologico_df['ln_Pmax_anual'] = np.log(ano_hidrologico_df['Pmax_anual'])
 
-# DADOS DA AMOSTRA
+# ---------------------------------- DADOS DA AMOSTRA -----------------------------------
 
 media_Pmax = ano_hidrologico_df['Pmax_anual'].mean()
 media_ln_Pmax = ano_hidrologico_df['ln_Pmax_anual'].mean()
@@ -92,13 +92,13 @@ std_ln_Pmax = ano_hidrologico_df['ln_Pmax_anual'].std()
 tamanho_amostra = ano_hidrologico_df.shape[0] - 1
 
 maior_valor = ano_hidrologico_df['Pmax_anual'].max()
-segundo_maior_valor = ano_hidrologico_df['Pmax_anual'].nlargest(2).iloc[1]
-segundo_menor_valor = ano_hidrologico_df['Pmax_anual'].nsmallest(2).iloc[1]
+maior2_valor = ano_hidrologico_df['Pmax_anual'].nlargest(2).iloc[1]
+menor2_valor = ano_hidrologico_df['Pmax_anual'].nsmallest(2).iloc[1]
 menor_valor = ano_hidrologico_df['Pmax_anual'].min()
 
 T_maior = (maior_valor - media_Pmax)/std_Pmax
-T_segundo_maior = (segundo_maior_valor - media_Pmax)/std_Pmax
-T_segundo_menor = (media_Pmax - segundo_menor_valor)/std_Pmax
+T_2maior = (maior2_valor - media_Pmax)/std_Pmax
+T_2menor = (media_Pmax - menor2_valor)/std_Pmax
 T_menor = (media_Pmax - menor_valor)/std_Pmax
 
 teste_GB = pd.read_csv("./csv/Tabela_Teste_GB.csv", sep=",",
@@ -107,30 +107,65 @@ teste_GB = pd.read_csv("./csv/Tabela_Teste_GB.csv", sep=",",
 Tcri_10 = teste_GB.loc[teste_GB['Number of observations']
                        == tamanho_amostra, 'Upper 10% Significance Level'].values[0]
 
-i = 2
-maior_valor = "outlier"
+resultado1_maior = ""
+resultado1_2maior = ""
+resultado1_2menor = ""
+resultado1_menor = ""
 
 if T_maior > Tcri_10:
-    while maior_valor == "outlier" and i < tamanho_amostra-1:
-        T_maior = (ano_hidrologico_df['Pmax_anual'].nlargest(
-            i).iloc[1] - media_Pmax)/std_Pmax
-        i = i + 1
-        if T_maior > Tcri_10:
-            maior_valor = "outlier"
-        else:
-            maior_valor = T_maior
+    resultado1_maior = "outlier"
 
-    if i < tamanho_amostra-1:
-        T_segundo_maior = (ano_hidrologico_df['Pmax_anual'].nlargest(
-            i).iloc[i - 1] - media_Pmax)/std_Pmax
-    else:
-        print("\nNão há segundo valor máximo")
-        T_segundo_maior = 0
+if T_2maior > Tcri_10:
+    resultado1_2maior = "outlier"
 
-kN_10 = -3.62201 + 6.28446*(tamanho_amostra**0.25) - 2.49835*(tamanho_amostra**0.5) + 0.491436*(tamanho_amostra**0.75) - 0.037911*tamanho_amostra
+if T_2menor > Tcri_10:
+    resultado1_2menor = "outlier"
+
+if T_menor > Tcri_10:
+    resultado1_menor = "outlier"
+
+
+kN_10 = -3.62201 + 6.28446*(tamanho_amostra**0.25) - 2.49835*(
+    tamanho_amostra**0.5) + 0.491436*(tamanho_amostra**0.75) - 0.037911*tamanho_amostra
 
 Xh_maior = np.exp(media_ln_Pmax + kN_10 * std_ln_Pmax)
 Xl_menor = np.exp(media_ln_Pmax - kN_10 * std_ln_Pmax)
+
+resultado2_maior = ""
+resultado2_2maior = ""
+resultado2_2menor = ""
+resultado2_menor = ""
+
+if maior_valor > Xh_maior:
+    resultado2_maior = "outlier"
+
+if maior2_valor > Xh_maior:
+    resultado2_2maior = "outlier"
+
+if menor2_valor < Xl_menor:
+    resultado2_2menor = "outlier"
+
+if menor_valor < Xl_menor:
+    resultado2_menor = "outlier"
+
+# RESULTADOS FINAIS
+
+resultado_final_maior = ""
+resultado_final_2maior = ""
+resultado_final_2menor = ""
+resultado_final_menor = ""
+
+if resultado1_maior == "outlier" and resultado2_maior == "outlier":
+    resultado_final_maior = "outlier"
+
+if resultado1_2maior == "outlier" and resultado2_2maior == "outlier":
+    resultado_final_2maior = "outlier"
+
+if resultado1_2menor == "outlier" and resultado2_2maior == "outlier":
+    resultado_final_2menor = "outlier"
+
+if resultado1_menor == "outlier" and resultado2_maior == "outlier":
+    resultado_final_menor = "outlier"
 
 
 ano_hidrologico_df.to_csv('anoHidrologico.csv', sep=';')
