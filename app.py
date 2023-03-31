@@ -4,7 +4,7 @@ import pickle
 
 
 def load_data(file_path):
-    return pd.read_csv(file_path, sep=";", encoding='ISO 8859-1', skiprows=12, decimal=",", usecols=["NivelConsistencia", "Data", "Maxima"])
+    return pd.read_csv(file_path, sep=";", encoding='ISO 8859-1', skiprows=12, decimal=",", usecols=["NivelConsistencia", "Data", "Maxima"], index_col=False)
 
 
 def process_data(df):
@@ -14,18 +14,38 @@ def process_data(df):
 
 
 def get_consistent_data(df):
-    consistent_data = df.loc[df['NivelConsistencia'] == 2, ["Data", "Maxima"]]
-    start_date = consistent_data['Data'].min()
-    end_date = consistent_data['Data'].max()
-    new_date_range = pd.date_range(start=start_date, end=end_date, freq='MS')
-    consistent_data = consistent_data.set_index('Data').reindex(new_date_range)
-    consistent_data = consistent_data.sort_index(
-    ).reset_index().rename(columns={'index': 'Data'})
+    # Retorna os dados com NivelConsistencia == 1
+    consistent_data = df.loc[df['NivelConsistencia']
+                             == 2, ["Data", "Maxima"]].copy()
+
+    consistent_data = consistent_data.set_index(
+        'Data').resample('MS').ffill().reset_index()
     return consistent_data
 
 
 def get_raw_data(df):
-    return df.loc[df['NivelConsistencia'] == 1, ["Data", "Maxima"]].reset_index(drop=True)
+    # Retorna os dados com NivelConsistencia == 1
+    return df.loc[df['NivelConsistencia'] == 1, [
+        "Data", "Maxima"]].reset_index(drop=True)
+
+
+def merge_and_fill_data(consistent_data, raw_data):
+    # Encontra a última data nos dois DataFrames
+    last_date = min(consistent_data['Data'].max(), raw_data['Data'].max())
+
+    # Filtra os DataFrames até a última data
+    consistent_data = consistent_data.loc[consistent_data['Data'] <= last_date]
+    raw_data = raw_data.loc[raw_data['Data'] <= last_date]
+
+    merged_df = pd.merge(consistent_data, raw_data,
+                         on="Data", how="outer", suffixes=('', '_y'))
+
+    merged_df['Maxima'].fillna(merged_df['Maxima_y'], inplace=True)
+    merged_df.drop('Maxima_y', axis=1, inplace=True)
+
+    merged_df['Maxima'].fillna(0, inplace=True)
+
+    return merged_df
 
 
 def remove_out_of_cycle_data(df):
@@ -42,19 +62,13 @@ def remove_out_of_cycle_data(df):
     return df.reset_index(drop=True)
 
 
-def merge_and_fill_data(consistent_data, raw_data):
-    merged_df = consistent_data.merge(
-        raw_data, left_index=True, right_index=True, how='left', suffixes=('', '_y'))
-    merged_df['Maxima'].fillna(merged_df['Maxima_y'], inplace=True)
-    merged_df.drop('Maxima_y', axis=1, inplace=True)
-    return merged_df.reset_index(drop=True)
-
-
 def add_hydrological_year(df):
-    df["AnoHidrologico"] = df["Data"].apply(
-        lambda x: x.year if x.month >= 10 else x.year - 1)
+    df["AnoHidrologico"] = df["Data"].dt.year.where(
+        df["Data"].dt.month >= 10, df["Data"].dt.year - 1)
+
     ano_hidrologico_df = df.groupby("AnoHidrologico")["Maxima"].max(
     ).reset_index().rename(columns={"Maxima": "Pmax_anual"})
+
     ano_hidrologico_df['ln_Pmax_anual'] = np.log(
         ano_hidrologico_df['Pmax_anual'])
     return ano_hidrologico_df
@@ -66,26 +80,23 @@ def save_data(data, file_path):
 
 
 def main():
-    input_file_path = "./csv/chuvas_C_01944009.csv"
+    input_file_path = 'csv/chuvas_C_01944009.csv'
     rain_data = load_data(input_file_path)
+
     rain_data = process_data(rain_data)
 
     consistent_rain_data = get_consistent_data(rain_data)
     raw_rain_data = get_raw_data(rain_data)
 
-    consistent_rain_data = remove_out_of_cycle_data(consistent_rain_data)
-
     filled_rain_data = merge_and_fill_data(consistent_rain_data, raw_rain_data)
 
+    filled_rain_data = remove_out_of_cycle_data(filled_rain_data)
+
     hydrological_year_data = add_hydrological_year(filled_rain_data)
+    hydrological_year_data.to_csv('./csv/hydrological_year_data.csv', sep=',')
 
-    print(hydrological_year_data)
-
-    output_file_path = "hydrological_year_data.pkl"
+    output_file_path = "./csv/hydrological_year_data.pkl"
     save_data(hydrological_year_data, output_file_path)
-
-    consistent_rain_data.to_csv('./csv/consistent_rain_data.csv', sep=',')
-    raw_rain_data.to_csv('./csv/raw_rain_data.csv', sep=',')
 
 
 if __name__ == "__main__":
