@@ -25,6 +25,15 @@ def dist_calculations(df):
     df["WTr"] = df["P_log"].mean() + df["P_log"].std() * df["KN"]
     df["P_log_normal"] = np.power(10, df['WTr'])
     
+    # Pearson
+    G = skew(df['Pmax_anual'])
+    alpha = 4/G**2
+
+    df['YTR'] = np.where(alpha > 0, sc.gammaincinv(
+        alpha, df['one_minus_F']), sc.gammaincinv(alpha, df['F']))
+    df["KP"] = (G/2)*(df['YTR']-alpha)
+    df["P_pearson"] = df["Pmax_anual"].mean() + df["Pmax_anual"].std() * df["KP"]
+    
     df.to_csv('./csv/stats.csv', sep=',')
 
     output_file_path = "./csv/stats.pkl"
