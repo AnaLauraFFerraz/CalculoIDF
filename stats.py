@@ -45,6 +45,12 @@ def dist_calculations(df):
 
     df["P_log_pearson"] = np.power(10, df['WTr_LP'])
     
+    # Gumbel Teórica
+    df["y"] = df["one_minus_F"].apply(lambda x: -np.log(-np.log(x)))
+    df["KG_T"] = 0.7797 * df["y"] - 0.45
+    df["P_gumbel_theoretical"] = df["Pmax_anual"].mean() + \
+    df["Pmax_anual"].std() * df["KG_T"]
+    
     df.to_csv('./csv/stats.csv', sep=',')
 
     output_file_path = "./csv/stats.pkl"
