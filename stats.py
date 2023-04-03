@@ -20,6 +20,11 @@ def dist_calculations(df):
     df["KN"] = norm.ppf(1 - df["F"])
     df["P_normal"] = df["Pmax_anual"].mean() + df["Pmax_anual"].std() * df["KN"]
 
+    # Log-Normal
+    df["P_log"] = np.log10(df["Pmax_anual"])
+    df["WTr"] = df["P_log"].mean() + df["P_log"].std() * df["KN"]
+    df["P_log_normal"] = np.power(10, df['WTr'])
+    
     df.to_csv('./csv/stats.csv', sep=',')
 
     output_file_path = "./csv/stats.pkl"
