@@ -74,7 +74,7 @@ def remove_outliers(df, p_mean, p_std, t_crit_10, x_h, x_l):
 def save_data(data, file_path):
     with open(file_path, 'wb') as file:
         pickle.dump(data, file)
-    
+
 
 def main():
     input_file_path = "./csv/hydrological_year_data.pkl"
@@ -94,7 +94,7 @@ def main():
 
     output_file_path = "./csv/no_outliers_data.pkl"
     save_data(no_outliers_data, output_file_path)
-    
+
     return no_outliers_data
 
 

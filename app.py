@@ -71,6 +71,10 @@ def add_hydrological_year(df):
 
     ano_hidrologico_df['ln_Pmax_anual'] = np.log(
         ano_hidrologico_df['Pmax_anual'])
+
+    ano_hidrologico_df = ano_hidrologico_df.sort_values(
+        by='Pmax_anual', ascending=False).reset_index(drop=True)
+
     return ano_hidrologico_df
 
 
