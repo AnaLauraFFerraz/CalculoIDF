@@ -84,7 +84,7 @@ def save_data(data, file_path):
 
 
 def main():
-    input_file_path = 'csv/chuvas_C_01944009.csv'
+    input_file_path = 'python_app/csv/chuvas_C_01944009.csv'
     rain_data = load_data(input_file_path)
 
     rain_data = process_data(rain_data)
@@ -97,9 +97,9 @@ def main():
     filled_rain_data = remove_out_of_cycle_data(filled_rain_data)
 
     hydrological_year_data = add_hydrological_year(filled_rain_data)
-    hydrological_year_data.to_csv('./csv/hydrological_year_data.csv', sep=',')
+    # hydrological_year_data.to_csv('./csv/hydrological_year_data.csv', sep=',')
 
-    output_file_path = "./csv/hydrological_year_data.pkl"
+    output_file_path = "python_app/pkl/hydrological_year_data.pkl"
     save_data(hydrological_year_data, output_file_path)
 
 

@@ -7,7 +7,7 @@ def load_data(file_path):
     with open(file_path, 'rb') as f:
         hydrological_year_data = pickle.load(f)
 
-    teste_GB = pd.read_csv("./csv/Tabela_Teste_GB.csv", sep=",",
+    teste_GB = pd.read_csv("python_app/csv/Tabela_Teste_GB.csv", sep=",",
                            encoding='ISO 8859-1', decimal=",", index_col=False)
 
     return hydrological_year_data, teste_GB
@@ -77,7 +77,7 @@ def save_data(data, file_path):
 
 
 def main():
-    input_file_path = "./csv/hydrological_year_data.pkl"
+    input_file_path = "python_app/pkl/hydrological_year_data.pkl"
     hydrological_year_data, teste_GB = load_data(input_file_path)
 
     p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(
@@ -90,9 +90,10 @@ def main():
 
     no_outliers_data = remove_outliers(
         hydrological_year_data, p_mean, p_std, t_crit_10, x_h, x_l)
-    no_outliers_data.to_csv('./csv/no_outliers_data.csv', sep=',')
 
-    output_file_path = "./csv/no_outliers_data.pkl"
+    # no_outliers_data.to_csv('./csv/no_outliers_data.csv', sep=',')
+
+    output_file_path = "python_app/pkl/no_outliers_data.pkl"
     save_data(no_outliers_data, output_file_path)
 
     return no_outliers_data

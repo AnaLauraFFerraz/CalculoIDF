@@ -5,7 +5,7 @@ import scipy.special as sc
 from scipy.stats import norm
 from scipy.stats import skew
 
-df = pd.read_pickle("./csv/no_outliers_data.pkl")
+df = pd.read_pickle("python_app/pkl/no_outliers_data.pkl")
 
 N = len(df)
 
@@ -57,9 +57,9 @@ def dist_calculations(df):
     df["P_gumbel_finite"] = df["Pmax_anual"].mean(
     ) + df["Pmax_anual"].std() * df["KG_F"]
 
-    df.to_csv('./csv/stats.csv', sep=',')
+    # df.to_csv('./csv/stats.csv', sep=',')
 
-    output_file_path = "./csv/stats.pkl"
+    output_file_path = "python_app/pkl/stats.pkl"
     save_data(df, output_file_path)
 
     return df
