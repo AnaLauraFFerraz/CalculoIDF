@@ -16,6 +16,9 @@ df["one_minus_F"] = 1 - df["F"] # 1 - [m / (N + 1)]
 
 def dist_calculations(df):
 
+    # Normal
+    df["KN"] = norm.ppf(1 - df["F"])
+    df["P_normal"] = df["Pmax_anual"].mean() + df["Pmax_anual"].std() * df["KN"]
 
     df.to_csv('./csv/stats.csv', sep=',')
 
