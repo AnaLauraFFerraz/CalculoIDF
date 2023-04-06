@@ -1,27 +1,14 @@
-import pandas as pd
 import numpy as np
-import pickle
-
-
-def load_data(file_path):
-    with open(file_path, 'rb') as f:
-        hydrological_year_data = pickle.load(f)
-
-    teste_GB = pd.read_csv("python_app/csv/Tabela_Teste_GB.csv", sep=",",
-                           encoding='ISO 8859-1', decimal=",", index_col=False)
-
-    return hydrological_year_data, teste_GB
 
 
 def calculate_statistics(df):
-    """Calculate mean and standard deviation of Pmax_anual and ln_Pmax_anual."""
-    p_mean = df['Pmax_anual'].mean()
-    ln_p_mean = df['ln_Pmax_anual'].mean()
+    mean = df['Pmax_anual'].mean()
+    ln_mean = df['ln_Pmax_anual'].mean()
 
-    p_std = df['Pmax_anual'].std()
-    ln_p_std = df['ln_Pmax_anual'].std()
+    std = df['Pmax_anual'].std()
+    ln_std = df['ln_Pmax_anual'].std()
 
-    return p_mean, ln_p_mean, p_std, ln_p_std
+    return mean, ln_mean, std, ln_std
 
 
 def calc_critical_values(test_gb_data, sample_size, ln_p_mean, ln_p_std):
@@ -71,33 +58,22 @@ def remove_outliers(df, p_mean, p_std, t_crit_10, x_h, x_l):
     return df
 
 
-def save_data(data, file_path):
-    with open(file_path, 'wb') as file:
-        pickle.dump(data, file)
+def main(processed_data, teste_gb):
 
+    p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(processed_data)
 
-def main():
-    input_file_path = "python_app/pkl/hydrological_year_data.pkl"
-    hydrological_year_data, teste_GB = load_data(input_file_path)
-
-    p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(
-        hydrological_year_data)
-
-    sample_size = hydrological_year_data.shape[0] - 1
+    sample_size = processed_data.shape[0] - 1
 
     t_crit_10, x_h, x_l = calc_critical_values(
-        teste_GB, sample_size, ln_p_mean, ln_p_std)
+        teste_gb, sample_size, ln_p_mean, ln_p_std)
 
     no_outliers_data = remove_outliers(
-        hydrological_year_data, p_mean, p_std, t_crit_10, x_h, x_l)
+        processed_data, p_mean, p_std, t_crit_10, x_h, x_l)
 
     # no_outliers_data.to_csv('./csv/no_outliers_data.csv', sep=',')
-
-    output_file_path = "python_app/pkl/no_outliers_data.pkl"
-    save_data(no_outliers_data, output_file_path)
 
     return no_outliers_data
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
