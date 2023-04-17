@@ -2,18 +2,21 @@ import numpy as np
 
 
 def calculate_statistics(df):
+    sample_size = df.shape[0] - 1
+
     mean = df['Pmax_anual'].mean()
     ln_mean = df['ln_Pmax_anual'].mean()
 
     std = df['Pmax_anual'].std()
     ln_std = df['ln_Pmax_anual'].std()
 
-    return mean, ln_mean, std, ln_std
+    return sample_size, mean, ln_mean, std, ln_std
 
 
-def calc_critical_values(test_gb_data, sample_size, ln_p_mean, ln_p_std):
-    """Calculate the critical values t_crit_10, x_h and x_l."""
-    t_crit_10 = test_gb_data.loc[test_gb_data['Number of observations']
+def calc_critical_values(gb_test, sample_size, ln_p_mean, ln_p_std):
+    # Calculate the critical values t_crit_10, x_h and x_l
+    
+    t_crit_10 = gb_test.loc[gb_test['Number of observations']
                                  == sample_size, 'Upper 10% Significance Level'].values[0]
 
     k_n_10 = -3.62201 + 6.28446*(sample_size**0.25) - 2.49835*(
@@ -26,46 +29,44 @@ def calc_critical_values(test_gb_data, sample_size, ln_p_mean, ln_p_std):
 
 
 def remove_outliers(df, p_mean, p_std, t_crit_10, x_h, x_l):
-    """Remove outlier values from the data based on the critical values."""
-    outlier = True
+    # Remove outlier values from the data based on the critical values
+    max_outlier = True
 
-    while outlier:
+    while max_outlier:
         p_max = df['Pmax_anual'].max()
         t_larger = (p_max - p_mean) / p_std
 
         if t_larger > t_crit_10 and p_max > x_h:
-            outlier = True
+            max_outlier = True
         else:
-            outlier = False
+            max_outlier = False
 
-        if outlier:
+        if max_outlier:
             df = df.drop(labels=df[df['Pmax_anual'] == p_max].index)
 
-    outlier = True
+    min_oulier = True
 
-    while outlier:
+    while min_oulier:
         p_min = df['Pmax_anual'].min()
         t_smaller = (p_mean - p_min) / p_std
 
         if t_smaller > t_crit_10 and p_min < x_l:
-            outlier = True
+            min_oulier = True
         else:
-            outlier = False
+            min_oulier = False
 
-        if outlier:
+        if min_oulier:
             df = df.drop(labels=df[df['Pmax_anual'] == p_min].index)
 
     return df
 
 
-def main(processed_data, teste_gb):
+def main(processed_data, gb_test):
 
-    p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(processed_data)
-
-    sample_size = processed_data.shape[0] - 1
+    sample_size, p_mean, ln_p_mean, p_std, ln_p_std = calculate_statistics(processed_data)
 
     t_crit_10, x_h, x_l = calc_critical_values(
-        teste_gb, sample_size, ln_p_mean, ln_p_std)
+        gb_test, sample_size, ln_p_mean, ln_p_std)
 
     no_outliers_data = remove_outliers(
         processed_data, p_mean, p_std, t_crit_10, x_h, x_l)
@@ -73,7 +74,3 @@ def main(processed_data, teste_gb):
     # no_outliers_data.to_csv('./csv/no_outliers_data.csv', sep=',')
 
     return no_outliers_data
-
-
-# if __name__ == "__main__":
-#     main()
