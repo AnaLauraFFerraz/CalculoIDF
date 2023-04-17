@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 
 
-def process_data(df):
+def process_raw_data(df):
     df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
     df = df.sort_values(by='Data', ascending=True)
     return df
 
 
 def get_consistent_data(df):
-    # Retorna os dados com NivelConsistencia == 1
+    # Retorna os dados com NivelConsistencia == 2
     consistent_data = df.loc[df['NivelConsistencia']
                              == 2, ["Data", "Maxima"]].copy()
 
@@ -53,8 +53,9 @@ def remove_out_of_cycle_data(df):
 
     df = df.drop(inicial_drop_range.index)
     df = df.drop(final_drop_range.index)
+    df = df.reset_index(drop=True)
 
-    return df.reset_index(drop=True)
+    return df
 
 
 def add_hydrological_year(df):
@@ -73,8 +74,8 @@ def add_hydrological_year(df):
     return ano_hidrologico_df
 
 
-def main(df):
-    rain_data = process_data(df)
+def main(raw_df):
+    rain_data = process_raw_data(raw_df)
 
     consistent_rain_data = get_consistent_data(rain_data)
     raw_rain_data = get_raw_data(rain_data)
@@ -89,6 +90,3 @@ def main(df):
 
     return hydrological_year_data
 
-
-# if __name__ == "__main__":
-#     main()
