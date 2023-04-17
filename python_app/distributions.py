@@ -3,6 +3,13 @@ import scipy.special as sc
 from scipy.stats import norm, stats, skew
 
 
+def yn_sigman_calculation(df, sample_size):
+    sigmaN = df.loc[df['Size'] == sample_size, 'sigmaN'].values[0]
+    yn = df.loc[df['Size'] == sample_size, 'YN'].values[0]
+
+    return sigmaN, yn
+
+
 def dist_normal(df, Pmax_anual, mean, std_dev):
     df["KN"] = norm.ppf(1 - df["F"])
     df["P_normal"] = mean + std_dev * df["KN"]
@@ -26,17 +33,17 @@ def dist_log_normal(df, Pmax_anual):
 
 
 def dist_pearson(df, Pmax_anual, mean, std_dev):
-    Gn = skew(Pmax_anual)
-    alpha = 4/Gn**2
+    g = skew(Pmax_anual)
+    alpha = 4/g**2
 
     df['YTR'] = np.where(alpha > 0, sc.gammaincinv(
         alpha, df['one_minus_F']), sc.gammaincinv(alpha, df['F']))
-    df["KP"] = (Gn/2)*(df['YTR']-alpha)
+    df["KP"] = (g/2)*(df['YTR']-alpha)
     df["P_pearson"] = mean + std_dev * df["KP"]
 
     corr_pearson, p_value = stats.pearsonr(Pmax_anual, df["P_pearson"])
     r2_pearson = corr_pearson ** 2
-    return r2_pearson, Gn, alpha
+    return r2_pearson, g, alpha
 
 
 def dist_log_pearson(df, Pmax_anual, meanw, std_devw):
@@ -76,34 +83,26 @@ def dist_gumbel_finite(df, Pmax_anual, mean, std_dev, sigmaN, yn):
     return r2_gumbel_finite
 
 
-def yn_sigman_calculation(df, sample_size):
-    sigmaN = df.loc[df['Size'] == sample_size, 'sigmaN'].values[0]
-    yn = df.loc[df['Size'] == sample_size, 'YN'].values[0]
-
-    return sigmaN, yn
-
-
-def dist_calculations(df, table_yn_sigman):
+def dist_calculations(df, sigmaN, yn, sample_size):
     Pmax_anual = df["Pmax_anual"]
 
-    sample_size = len(df)
     mean = Pmax_anual.mean()
     std_dev = Pmax_anual.std()
 
     df["F"] = (df.index + 1) / (sample_size + 1)
     df["one_minus_F"] = 1 - df["F"]
 
-    sigmaN, yn = yn_sigman_calculation(table_yn_sigman, sample_size)
-
     r2_normal = dist_normal(df, Pmax_anual, mean, std_dev)
+
     r2_log_normal, meanw, std_devw = dist_log_normal(df, Pmax_anual)
 
-    r2_pearson, Gn, alpha = dist_pearson(df, Pmax_anual, mean, std_dev)
+    r2_pearson, g, alpha = dist_pearson(df, Pmax_anual, mean, std_dev)
 
-    r2_log_pearson, Gw, alphaw = dist_log_pearson(
+    r2_log_pearson, gw, alphaw = dist_log_pearson(
         df, Pmax_anual, mean, std_dev)
 
     r2_gumbel_theo = dist_gumbel_theoretical(df, Pmax_anual, mean, std_dev)
+
     r2_gumbel_finite = dist_gumbel_finite(
         df, Pmax_anual, mean, std_dev, sigmaN, yn)
 
@@ -116,30 +115,37 @@ def dist_calculations(df, table_yn_sigman):
         "r2_gumbel_finite": r2_gumbel_finite
     }
 
-    max_key = max(distributions, key=distributions.get)
-    max_value_r2 = distributions[max_key]
+    max_dist = max(distributions, key=distributions.get)
+    max_value_r2 = distributions[max_dist]
 
+    dist_r2 = {"max_dist": max_dist,
+               "max_value_r2": max_value_r2}
+
+    print("\n",dist_r2)
+    
     params = {
+        "size": sample_size,
         "mean": mean,
         "std_dev": std_dev,
-        "G": Gn,
+        "g": g,
         "alpha": alpha,
         "meanw": meanw,
         "stdw": std_devw,
-        "Gw": Gw,
+        "gw": gw,
         "alphaw": alphaw,
         "sigman": sigmaN,
         "yn": yn
     }
 
-    return df, params, max_value_r2
+    return params, dist_r2
 
 
-def main(df, table_yn_sigman):
-    df, params, max_value_r2 = dist_calculations(df, table_yn_sigman)
+def main(no_oulier_data, table_yn_sigman):
+    sample_size = len(no_oulier_data)
 
-    return df, params, max_value_r2
+    sigmaN, yn = yn_sigman_calculation(table_yn_sigman, sample_size)
 
+    params, dist_r2 = dist_calculations(
+        no_oulier_data, sigmaN, yn, sample_size)
 
-# if __name__ == "__main__":
-#     main()
+    return params, dist_r2
