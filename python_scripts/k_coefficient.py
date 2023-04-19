@@ -69,12 +69,12 @@ def k_dist_log_pearson_calc(k_coefficient, params):
 
 def k_dist_gumbel_theoretical_calc(k_coefficient, params):
 
-    def calculate_k_dist_gumbel_theoretical(row, params):
-        # Estime a média e o desvio padrão da distribuição de Gumbel
-        loc, scale = gumbel_r.fit(params["yn"])
-        mu = loc + scale * 0.5772
-        beta = scale * np.pi / np.sqrt(6)
+    # Estime a média e o desvio padrão da distribuição de Gumbel
+    loc, scale = gumbel_r.fit(params["yn"])
+    mu = loc + scale * 0.5772
+    beta = scale * np.pi / np.sqrt(6)
 
+    def calculate_k_dist_gumbel_theoretical(row, mu, beta):
         # Obtenha a probabilidade de não excedência para o valor de k
         no_exceedance = row["no_exceedance"]
 
@@ -86,9 +86,10 @@ def k_dist_gumbel_theoretical_calc(k_coefficient, params):
         return k
 
     k_coefficient["k"] = k_coefficient.apply(
-        lambda row: calculate_k_dist_gumbel_theoretical(row, params), axis=1)
+        lambda row: calculate_k_dist_gumbel_theoretical(row, mu, beta), axis=1)
 
     return k_coefficient
+
 
 
 def k_dist_gumbel_finite_calc(k_coefficient, params):
