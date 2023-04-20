@@ -61,6 +61,7 @@ def add_erro_relativo(df):
 
 def objective_function(params, df):
     k, m, c, n = params
+    
     try:
         df["i_calculado"] = (k * df["Tr (anos)"] ** m) / \
             ((c + df["td (min)"]) ** n)
@@ -85,6 +86,13 @@ def optimize_parameters(df):
     )
 
     k_opt, m_opt, c_opt, n_opt = result.x
+    
+    k_opt = k_opt.round(4)
+    m_opt = m_opt.round(4)
+    c_opt = c_opt.round(4)
+    n_opt = n_opt.round(4)
+    # print("result", result.x)
+    
     return k_opt, m_opt, c_opt, n_opt
 
 
@@ -115,7 +123,7 @@ def main(k_coefficient_data, disaggregation_data, params, time_interval, dist_r2
     erro_relativo_medio, transformed_df = recalculate_dataframe(transformed_df, k_opt, m_opt, c_opt, n_opt)
     
     print(f"\nErro relativo médio: {erro_relativo_medio:.2f}%\n")
-    print(transformed_df)
+    print(transformed_df.head())
     # transformed_df.to_csv('python_app/csv/transformed_df.csv', sep=',')
 
     return transformed_df

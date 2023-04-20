@@ -1,6 +1,7 @@
 import pandas as pd
 import sys
 import os
+import json
 
 from process_data import main as process_data
 from teste_outlier import main as teste_outlier
@@ -9,23 +10,18 @@ from k_coefficient import main as k_coefficient
 from disaggregation_coef import main as disaggregation_coef
 from ventechow import main as ventechow
 
+
 def load_data(csv_file_path):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     input_data = pd.read_csv(csv_file_path, sep=";", encoding='ISO 8859-1', skiprows=12,
                              decimal=",", usecols=["NivelConsistencia", "Data", "Maxima"], index_col=False)
-    
-    # input_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01944009.csv"
-    # input_data = pd.read_csv(input_file_path, sep=";", encoding='ISO 8859-1', skiprows=12,
-    #                          decimal=",", usecols=["NivelConsistencia", "Data", "Maxima"], index_col=False)
 
-    
-    # gb_test_file_path = "CalculoIDF/python_scripts/csv/Tabela_Teste_GB.csv"
     gb_test_file_path = os.path.join(script_dir, "csv", "Tabela_Teste_GB.csv")
     gb_test = pd.read_csv(gb_test_file_path, sep=",",
                           encoding='ISO 8859-1', decimal=",", index_col=False)
 
-    # yn_sigman_file_path = "CalculoIDF/python_scripts/csv/Tabela_YN_sigmaN.csv"
-    yn_sigman_file_path = os.path.join(script_dir, "csv", "Tabela_YN_sigmaN.csv")
+    yn_sigman_file_path = os.path.join(
+        script_dir, "csv", "Tabela_YN_sigmaN.csv")
     table_yn_sigman = pd.read_csv(yn_sigman_file_path, sep=",", encoding='ISO 8859-1',
                                   decimal=",", usecols=["Size", "YN", "sigmaN"], index_col=False)
 
@@ -37,6 +33,12 @@ def main(csv_file_path):
 
     processed_data = process_data(raw_df)
 
+    if processed_data.empty:
+        insufficient_data = "Dados não são sufientes para completar a análise"
+        with open('idf_data.json', 'w', encoding='utf-8') as f:
+            json.dump(insufficient_data, f)
+        return json.dumps(insufficient_data)
+
     no_outlier = teste_outlier(processed_data, gb_test)
 
     params, dist_r2 = distributions(
@@ -45,16 +47,32 @@ def main(csv_file_path):
     k_coefficient_data = k_coefficient(params, dist_r2)
 
     disaggregation_data, time_interval = disaggregation_coef(params, dist_r2)
-    print(k_coefficient_data["k"])
+    # print("\nk_coefficient_data['k']\n",  k_coefficient_data["k"])
 
     idf_data = ventechow(k_coefficient_data,
                          disaggregation_data, params, time_interval, dist_r2)
 
-    # Exportar idf_data para um arquivo JSON
-    with open('CalculoIDF/src/idf_data.json', 'w') as f:
-        f.write(idf_data.to_json(orient='records', lines=True))
+    # Converta o DataFrame em uma lista de dicionários
+    idf_data_list = idf_data.to_dict(orient='records')
 
-    return idf_data
+    # Crie um dicionário vazio
+    output_dict = {}
+
+    # Adicione cada objeto do DataFrame ao dicionário
+    for i, row in enumerate(idf_data_list):
+        output_dict[str(i)] = row
+
+    # print(output_dict)
+
+    # Salve o dicionário como um arquivo JSON
+    with open('idf_data.json', 'w', encoding='utf-8') as f:
+        json.dump(output_dict, f)
+    
+    # print("\nJSON gerado:")
+    # print(json.dumps(output_dict, indent=2))
+
+    # Retorne o dicionário como uma string JSON
+    return json.dumps(output_dict)
 
 
 if __name__ == "__main__":
@@ -63,3 +81,7 @@ if __name__ == "__main__":
     else:
         csv_file_path = sys.argv[1]
         main(csv_file_path)
+
+# if __name__ == "__main__":
+#     csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_02043032_MA.csv"
+#     main(csv_file_path)

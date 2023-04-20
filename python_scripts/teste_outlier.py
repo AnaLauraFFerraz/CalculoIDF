@@ -2,7 +2,7 @@ import numpy as np
 
 
 def calculate_statistics(df):
-    sample_size = df.shape[0] - 1
+    sample_size = df.shape[0]
 
     mean = df['Pmax_anual'].mean()
     ln_mean = df['ln_Pmax_anual'].mean()
