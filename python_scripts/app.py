@@ -64,7 +64,6 @@ def main(csv_file_path):
 
     # print(output_dict)
 
-    # Salve o dicionário como um arquivo JSON
     with open('idf_data.json', 'w', encoding='utf-8') as f:
         json.dump(output_dict, f)
     
