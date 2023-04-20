@@ -1,50 +1,85 @@
 import express from "express"
 import cors from "cors"
 import multer from "multer"
-import { PythonShell } from "python-shell"
 import fs from "fs"
-import { spawn } from"child_process"
+import { spawn } from "child_process"
+import path from "path"
+import { fileURLToPath } from "url"
 
 const app = express();
-const PORT = 5000
-
-app.use(cors())
-app.use(express.json())
+app.use(cors());
 
 const upload = multer({ dest: 'uploads/' });
 
-// Cria o diretório 'uploads' se ele não existir
+// Converta o caminho do arquivo URL em um caminho de arquivo local
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-app.post("/upload", upload.single("csv"), (req, res) => {
-  // Executar o script Python
-  const pythonOptions = {
-    args: [req.file.path], // Passar o caminho do arquivo CSV como argumento
-  };
-  PythonShell.run("../../python_app/app.py", pythonOptions, (err) => {
-    if (err) {
-      console.error("Python error:", err);
-      res.status(500).send("Error executing Python script");
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    res.status(400).send({ message: 'Nenhum arquivo foi enviado' });
+    return;
+  }
+
+  const pythonAppPath = path.join(__dirname, '..', 'python_scripts', 'app.py');
+  const csvFilePath = req.file.path;
+  const idfDataPath = path.join(__dirname, "..", 'idf_data.json');
+
+  const pythonProcess = spawn('python', [pythonAppPath, csvFilePath]);
+
+  let errorOccurred = false;
+
+  // Lida com erros ao executar o script Python
+  pythonProcess.stderr.once('data', (data) => {
+    console.error(`Erro ao executar o script Python: ${data}`);
+    errorOccurred = true;
+    res.status(500).send({ message: 'Erro ao executar o script Python' });
+  });
+
+  // Envia a resposta JSON ao cliente quando o script Python terminar
+  pythonProcess.on('close', (code) => {
+    if (errorOccurred) {
       return;
     }
 
-    // Ler o arquivo JSON gerado pelo script Python
-    fs.readFile("ventechow_data.json", "utf8", (err, data) => {
-      if (err) {
-        console.error("File read error:", err);
-        res.status(500).send("Error reading JSON file");
-        return;
-      }
+    if (code !== 0) {
+      console.error(`Erro após executar o script Python: ${code}`);
+      res.status(500).send({ message: 'Erro ao executar o script Python' });
+    } else {
+      fs.readFile(idfDataPath, (err, data) => {
+        if (err) {
+          console.error(`Erro ao ler o arquivo IDF Data: ${err}`);
+          res.status(500).send({ message: 'Erro ao ler o arquivo IDF Data' });
+        } else {
+          const idfData = JSON.parse(data);
+          // console.log("JSON recebido:");
+          // console.log(JSON.stringify(idfData, null, 2));
 
-      // Enviar o JSON para o front-end
-      res.json(JSON.parse(data));
-    });
+          res.status(200).send(idfData);
+        }
+
+        // Remove o arquivo CSV e IDF Data após o processamento
+        fs.unlink(csvFilePath, (err) => {
+          if (err) {
+            console.error(`Erro ao remover o arquivo CSV: ${err}`);
+          }
+        });
+
+        fs.unlink(idfDataPath, (err) => {
+          if (err) {
+            console.error(`Erro ao remover o arquivo IDF Data: ${err}`);
+          }
+        });
+      });
+    }
   });
 });
 
-
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server listening at http://localhost:${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
