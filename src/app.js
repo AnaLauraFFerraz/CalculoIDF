@@ -11,7 +11,7 @@ app.use(cors());
 
 const upload = multer({ dest: 'uploads/' });
 
-// Converta o caminho do arquivo URL em um caminho de arquivo local
+// Converte o caminho do arquivo URL em um caminho de arquivo local
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -56,8 +56,6 @@ app.post('/upload', upload.single('file'), (req, res) => {
           res.status(500).send({ message: 'Erro ao ler o arquivo IDF Data' });
         } else {
           const idfData = JSON.parse(data);
-          // console.log("JSON recebido:");
-          // console.log(JSON.stringify(idfData, null, 2));
 
           res.status(200).send(idfData);
         }
