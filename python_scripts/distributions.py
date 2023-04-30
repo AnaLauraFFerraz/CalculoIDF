@@ -13,49 +13,26 @@ def yn_sigman_calculation(df, sample_size):
 
 
 def dist_normal(df, mean, std_dev):
-    df["KN"] = norm.ppf(1 - df["F"])
-    df["P_normal"] = mean + std_dev * df["KN"]
-
-    corr_normal, _ = stats.pearsonr(df["Pmax_anual"], df["P_normal"])
-    r2_normal = corr_normal ** 2
-    r2_normal = r2_normal.round(4)
-    return r2_normal
-
-# def dist_normal(df, mean, std_dev):
-#     # Usando a distribuição normal para calcular a precipitação máxima anual esperada
-#     df['Pmax_anual_estimada'] = norm.ppf(
-#         df['one_minus_F'], loc=mean, scale=std_dev)
-
-#     # Calculando o R²
-#     r_squared = r2_score(df['Pmax_anual'], df['Pmax_anual_estimada'])
-
-#     return r_squared
-
-
-def dist_log_normal(df):
-    # Usando a distribuição log-normal para calcular a precipitação máxima anual esperada
-    shape, loc, scale = lognorm.fit(df['Pmax_anual'], floc=0)
-    df['Pmax_anual_estimada'] = lognorm.ppf(
-        df['one_minus_F'], shape, loc, scale)
+    # Usando a distribuição normal para calcular a precipitação máxima anual esperada
+    df['Pmax_anual_estimada'] = norm.ppf(
+        df['one_minus_F'], loc=mean, scale=std_dev)
 
     # Calculando o R²
     r_squared = r2_score(df['Pmax_anual'], df['Pmax_anual_estimada'])
 
     return r_squared
 
-# def dist_log_normal(df):
-#     df["P_log"] = np.log10(df["Pmax_anual"])
-#     meanw = df["P_log"].mean()
-#     std_devw = df["P_log"].std()
 
-#     df["WTr"] = meanw + std_devw * df["KN"]
-#     df["P_log_normal"] = np.power(10, df['WTr'])
+def dist_log_normal(df):
+    # Usa a distribuição log-normal para calcular a precipitação máxima anual esperada
+    shape, loc, scale = lognorm.fit(df['Pmax_anual'], floc=0)
+    df['Pmax_anual_estimada'] = lognorm.ppf(
+        df['one_minus_F'], shape, loc, scale)
 
-#     corr_log_normal, _ = stats.pearsonr(df["Pmax_anual"], df["P_log_normal"])
-#     r2_log_normal = corr_log_normal ** 2
-#     r2_log_normal = r2_log_normal.round(4)
-#     return r2_log_normal, meanw, std_devw
+    # Cálculo do R²
+    r_squared = r2_score(df['Pmax_anual'], df['Pmax_anual_estimada'])
 
+    return r_squared
 
 def dist_pearson(df, mean, std_dev):
     g = skew(df["Pmax_anual"])
@@ -68,47 +45,59 @@ def dist_pearson(df, mean, std_dev):
 
     corr_pearson, _ = stats.pearsonr(df["Pmax_anual"], df["P_pearson"])
     r2_pearson = corr_pearson ** 2
-    r2_pearson = r2_pearson.round(4)
+    # r2_pearson = r2_pearson.round(4)
     return r2_pearson, g, alpha
 
 
-def dist_log_pearson(df, meanw, std_devw):
-    Gw = skew(df['P_log'])
-    alphaw = 4/Gw**2
+def dist_log_pearson(df, mean, std_dev):
+    df_log = np.log(df["Pmax_anual"])
 
-    df["YTRw"] = np.where(alphaw > 0, sc.gammaincinv(
-        alphaw, df['one_minus_F']), sc.gammaincinv(alphaw, df['F']))
+    g = stats.skew(df_log)
+    alpha = 4 / g**2
 
-    df["KL_P"] = (Gw/2)*(df['YTRw']-alphaw)
-    df["WTr_LP"] = meanw + std_devw * df["KL_P"]
-    df["P_log_pearson"] = np.power(10, df['WTr_LP'])
+    df['YTR'] = np.where(alpha > 0, sc.gammaincinv(
+        alpha, df['one_minus_F']), sc.gammaincinv(alpha, df['F']))
+    df["KP"] = (g / 2) * (df['YTR'] - alpha)
+    df["log_P_pearson"] = mean + std_dev * df["KP"]
 
-    corr_log_pearson, _ = stats.pearsonr(df["Pmax_anual"], df["P_log_pearson"])
-    r2_log_pearson = corr_log_pearson ** 2
-    r2_log_pearson = r2_log_pearson.round(4)
-    return r2_log_pearson, Gw, alphaw
+    corr_pearson, _ = stats.pearsonr(df_log, df["log_P_pearson"])
+    r2_pearson = corr_pearson ** 2
+    # r2_pearson = r2_pearson.round(4)
 
+    return r2_pearson, g, alpha
 
 def dist_gumbel_theoretical(df, mean, std_dev):
+    # Calculando a variável 'y' a partir da coluna 'one_minus_F'
     df["y"] = df["one_minus_F"].apply(lambda x: -np.log(-np.log(x)))
+
+    # Calculando a variável 'KG_T' para a distribuição de Gumbel teórica
     df["KG_T"] = 0.7797 * df["y"] - 0.45
+
+    # Estimando a precipitação máxima anual usando a distribuição de Gumbel teórica
     df["P_gumbel_theoretical"] = mean + std_dev * df["KG_T"]
 
-    corr_gumbel, _ = stats.pearsonr(
-        df["Pmax_anual"], df["P_gumbel_theoretical"])
+    # Calculando o coeficiente de correlação de Pearson
+    corr_gumbel, _ = stats.pearsonr(df["Pmax_anual"], df["P_gumbel_theoretical"])
+
+    # Calculando e retornando o coeficiente de determinação (R²)
     r2_gumbel_theo = corr_gumbel ** 2
-    r2_gumbel_theo = r2_gumbel_theo.round(4)
+    # r2_gumbel_theo = r2_gumbel_theo.round(4)
     return r2_gumbel_theo
 
-
 def dist_gumbel_finite(df, mean, std_dev, sigmaN, yn):
-    df["KG_F"] = (df["y"] - yn)/sigmaN
+    # Calculando a variável 'KG_F' para a distribuição de Gumbel finita
+    df["KG_F"] = (df["y"] - yn) / sigmaN
+
+    # Estimando a precipitação máxima anual usando a distribuição de Gumbel finita
     df["P_gumbel_finite"] = mean + std_dev * df["KG_F"]
 
+    # Calculando o coeficiente de correlação de Pearson
     corr_gumbel_finite, _ = stats.pearsonr(
         df["Pmax_anual"], df["P_gumbel_finite"])
+
+    # Calculando e retornando o coeficiente de determinação (R²)
     r2_gumbel_finite = corr_gumbel_finite ** 2
-    r2_gumbel_finite = r2_gumbel_finite.round(4)
+    # r2_gumbel_finite = r2_gumbel_finite.round(4)
     return r2_gumbel_finite
 
 
@@ -158,10 +147,8 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
         "r2_gumbel_finite": r2_gumbel_finite
     }
 
-    # max_dist = max(distributions, key=distributions.get)
-    # max_value_r2 = distributions[max_dist]
-    max_dist = "r2_log_normal"
-    max_r2 = distributions["r2_log_normal"]
+    max_dist = max(distributions, key=distributions.get)
+    max_r2 = distributions[max_dist]
 
     dist_r2 = {"max_dist": max_dist,
                "max_value_r2": max_r2}
