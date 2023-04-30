@@ -12,7 +12,7 @@ def get_consistent_data(df):
     # Retorna os dados com NivelConsistencia == 2
     consistent_data = df.loc[df['NivelConsistencia']
                              == 2, ["Data", "Maxima"]].copy()
-    if consistent_data.shape[0] < 10: 
+    if consistent_data.shape[0] < 10:
         consistent_data.drop(consistent_data.index, inplace=True)
         return consistent_data
 
@@ -30,7 +30,7 @@ def get_raw_data(df):
         "Data", "Maxima"]].reset_index(drop=True)
 
 
-def merge_and_fill_data(consistent_data, raw_data):    
+def merge_and_fill_data(consistent_data, raw_data):
     # Encontra a última data nos dois DataFrames
     last_date = min(consistent_data['Data'].max(), raw_data['Data'].max())
 
@@ -81,21 +81,24 @@ def add_hydrological_year(df):
 
 
 def main(raw_df):
+    raw_df = raw_df.fillna(0)
     rain_data = process_raw_data(raw_df)
 
     consistent_rain_data = get_consistent_data(rain_data)
     raw_rain_data = get_raw_data(rain_data)
-    
+
     if consistent_rain_data.empty:
         consistent_rain_data = raw_rain_data
-    
+
     filled_rain_data = merge_and_fill_data(consistent_rain_data, raw_rain_data)
 
     filled_rain_data = remove_out_of_cycle_data(filled_rain_data)
 
     hydrological_year_data = add_hydrological_year(filled_rain_data)
-    print("hydrological_year_data.shape[0]", hydrological_year_data.shape[0])
-    print("\hydrological_year_data\n", hydrological_year_data)
+
+    # print("hydrological_year_data.shape[0]", hydrological_year_data.shape[0])
+    # print("\hydrological_year_data\n", hydrological_year_data)
+
     if hydrological_year_data.shape[0] < 10:
         hydrological_year_data.drop(hydrological_year_data.index, inplace=True)
         return hydrological_year_data
