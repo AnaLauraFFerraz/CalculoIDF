@@ -68,16 +68,16 @@ def add_hydrological_year(df):
     df["AnoHidrologico"] = df["Data"].dt.year.where(
         df["Data"].dt.month >= 10, df["Data"].dt.year - 1)
 
-    ano_hidrologico_df = df.groupby("AnoHidrologico")["Maxima"].max(
+    hydrological_year_df = df.groupby("AnoHidrologico")["Maxima"].max(
     ).reset_index().rename(columns={"Maxima": "Pmax_anual"})
 
-    ano_hidrologico_df['ln_Pmax_anual'] = np.log(
-        ano_hidrologico_df['Pmax_anual'])
+    hydrological_year_df['ln_Pmax_anual'] = np.log(
+        hydrological_year_df['Pmax_anual'])
 
-    ano_hidrologico_df = ano_hidrologico_df.sort_values(
+    hydrological_year_df = hydrological_year_df.sort_values(
         by='Pmax_anual', ascending=False).reset_index(drop=True)
 
-    return ano_hidrologico_df
+    return hydrological_year_df
 
 
 def main(raw_df):
