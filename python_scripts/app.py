@@ -7,7 +7,7 @@ from process_data import main as process_data
 from teste_outlier import main as teste_outlier
 from distributions import main as distributions
 from k_coefficient import main as k_coefficient
-from disaggregation_coef import main as disaggregation_coef
+from disaggregation_coef import disaggregation_coef
 from ventechow import main as ventechow
 
 
@@ -46,10 +46,10 @@ def main(csv_file_path):
     params, dist_r2, data = distributions(
         no_outlier, table_yn_sigman)
 
-    k_coefficient_data = k_coefficient(params, dist_r2)
-
     disaggregation_data, time_interval = disaggregation_coef(params, dist_r2, data)
     # print("\nk_coefficient_data['k']\n",  k_coefficient_data["k"])
+
+    k_coefficient_data = k_coefficient(params, dist_r2)
 
     idf_data = ventechow(k_coefficient_data,
                          disaggregation_data, params, time_interval, dist_r2)
