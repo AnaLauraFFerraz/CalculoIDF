@@ -1,6 +1,5 @@
 def disaggregation_coef():
-    # time_intervals = [24, 12, 10, 8, 6, 4, 2, 1,
-    #                   0.5, 25/60, 20/60, 15/60, 10/60, 5/60]
+
     time_intervals = {
         "24h": 24,
         "12h": 12,
