@@ -1,4 +1,11 @@
 def disaggregation_coef():
+    """
+    Function to define time intervals and their associated coefficients for disaggregation.
+    Returns:
+        tuple: Returns a tuple containing two dictionaries. 
+               The first dictionary maps the time intervals to their duration in hours. 
+               The second dictionary maps the time intervals to their respective coefficients.
+    """
 
     time_intervals = {
         "24h": 24,

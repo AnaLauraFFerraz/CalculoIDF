@@ -1,7 +1,7 @@
-import pandas as pd
+import json
 import sys
 import os
-import json
+import pandas as pd
 
 from process_data import main as process_data
 from teste_outlier import main as teste_outlier
@@ -12,6 +12,14 @@ from ventechow import main as ventechow
 
 
 def load_data(csv_file_path):
+    """
+    Function to load the required data for further analysis.
+    Args:
+        csv_file_path (str): Path of the CSV file to be loaded.
+    Returns:
+        tuple: Returns a tuple containing the input data, Grubbs' test data, and YN SigmaN table data.
+    """
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     input_data = pd.read_csv(csv_file_path, sep=";", encoding='ISO 8859-1', skiprows=12,
@@ -30,6 +38,15 @@ def load_data(csv_file_path):
 
 
 def main(csv_file_path):
+    """
+    Main function to process the data, test for outliers, determine the distribution, 
+    calculate the k coefficient, and calculate the Ven Te Chow parameters.
+    Args:
+        csv_file_path (str): Path of the CSV file to be processed.
+    Returns:
+        dict: Returns a dictionary with the calculated parameters and other relevant results.
+    """
+
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
     processed_data = process_data(raw_df)
@@ -49,36 +66,28 @@ def main(csv_file_path):
 
     k_coefficient_data = k_coefficient(params, dist_r2)
 
-    idf_data = ventechow(k_coefficient_data,
-                         disaggregation_data, params, time_interval, dist_r2)
+    output = ventechow(k_coefficient_data,
+                       disaggregation_data, params, time_interval, dist_r2)
 
-    # Converte o DataFrame em uma lista de dicionários
-    idf_data_list = idf_data.to_dict(orient='records')
+    with open('output.json', 'w', encoding='utf-8') as json_file:
+        json.dump(output, json_file)
 
-    # Cria um dicionário vazio
-    output_dict = {}
-
-    # Adiciona cada objeto do DataFrame ao dicionário
-    for i, row in enumerate(idf_data_list):
-        output_dict[str(i)] = row
-
-    with open('idf_data.json', 'w', encoding='utf-8') as f:
-        json.dump(output_dict, f)
+    # with open('idf_data.json', 'w', encoding='utf-8') as f:
+    #     json.dump(output_dict, f)
 
     # print("\nJSON gerado:")
-    # print(json.dumps(output_dict, indent=2))
+    # print(json.dumps(output, json_file))
 
-    # Retorna o dicionário como uma string JSON
-    return json.dumps(output_dict)
+    return output
 
-
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("Por favor, forneça o caminho do arquivo CSV como argumento")
-#     else:
-#         csv_file_path = sys.argv[1]
-#         main(csv_file_path)
 
 if __name__ == "__main__":
-    csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
-    main(csv_file_path)
+    if len(sys.argv) < 2:
+        print("Por favor, forneça o caminho do arquivo CSV como argumento")
+    else:
+        csv_file_path = sys.argv[1]
+        main(csv_file_path)
+
+# if __name__ == "__main__":
+#     csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+#     main(csv_file_path)

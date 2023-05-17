@@ -4,6 +4,15 @@ from scipy.stats import norm, stats, skew
 
 
 def yn_sigman_calculation(df, sample_size):
+    """
+    Function to get 'sigmaN' and 'YN' values from the dataframe based on the sample size.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        sample_size (int): The size of the sample.
+    Returns:
+        tuple: Returns a tuple containing sigmaN and yn.
+    """
+
     sigmaN = df.loc[df['Size'] == sample_size, 'sigmaN'].values[0]
     yn = df.loc[df['Size'] == sample_size, 'YN'].values[0]
 
@@ -11,6 +20,14 @@ def yn_sigman_calculation(df, sample_size):
 
 
 def dist_log_normal(df, params):
+    """
+    Function to calculate r2 for the log-normal distribution.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        params (dict): The parameters dictionary.
+    Returns:
+        float: Returns the r2 value for the log-normal distribution.
+    """
 
     df["WTr"] = params["meanw"] + params["stdw"] * df["KN"]
     df["P_log_normal"] = np.power(10, df['WTr'])
@@ -23,6 +40,15 @@ def dist_log_normal(df, params):
 
 
 def dist_pearson(df, params):
+    """
+    Function to calculate r2 for the Pearson distribution.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        params (dict): The parameters dictionary.
+    Returns:
+        float: Returns the r2 value for the Pearson distribution.
+    """
+
     if params["gw"] > 0:
         params["alpha"] = params["alphaw"]
 
@@ -39,6 +65,15 @@ def dist_pearson(df, params):
 
 
 def dist_log_pearson(df, params):
+    """
+    Function to calculate r2 for the log-Pearson distribution.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        params (dict): The parameters dictionary.
+    Returns:
+        float: Returns the r2 value for the log-Pearson distribution.
+    """
+
     df["YTRw"] = np.where(params["alphaw"] > 0, gammaincinv(
         params["alphaw"], df['one_minus_F']), gammaincinv(params["alphaw"], df['F']))
 
@@ -54,21 +89,25 @@ def dist_log_pearson(df, params):
 
 
 def dist_gumbel_theoretical(df, params):
-    # Calculando a variável 'y' a partir da coluna 'one_minus_F'
+    """
+    Function to calculate r2 for the theoretical Gumbel distribution.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        params (dict): The parameters dictionary.
+    Returns:
+        float: Returns the r2 value for the theoretical Gumbel distribution.
+    """
+
     df["y"] = df["one_minus_F"].apply(lambda x: -np.log(-np.log(x)))
 
-    # Calculando a variável 'KG_T' para a distribuição de Gumbel teórica
     df["KG_T"] = 0.7797 * df["y"] - 0.45
 
-    # Estimando a precipitação máxima anual usando a distribuição de Gumbel teórica
     df["P_gumbel_theoretical"] = params["mean"] + \
         params["std_dev"] * df["KG_T"]
 
-    # Calculando o coeficiente de correlação de Pearson
     corr_gumbel, _ = stats.pearsonr(
         df["Pmax_anual"], df["P_gumbel_theoretical"])
 
-    # Calculando e retornando o coeficiente de determinação (R²)
     r2_gumbel_theo = corr_gumbel ** 2
     r2_gumbel_theo = r2_gumbel_theo.round(4)
 
@@ -76,17 +115,22 @@ def dist_gumbel_theoretical(df, params):
 
 
 def dist_gumbel_finite(df, params):
-    # Calculando a variável 'KG_F' para a distribuição de Gumbel finita
+    """
+    Function to calculate r2 for the finite Gumbel distribution.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+        params (dict): The parameters dictionary.
+    Returns:
+        float: Returns the r2 value for the finite Gumbel distribution.
+    """
+
     df["KG_F"] = (df["y"] - params["yn"]) / params["sigman"]
 
-    # Estimando a precipitação máxima anual usando a distribuição de Gumbel finita
     df["P_gumbel_finite"] = params["mean"] + params["std_dev"] * df["KG_F"]
 
-    # Calculando o coeficiente de correlação de Pearson
     corr_gumbel_finite, _ = stats.pearsonr(
         df["Pmax_anual"], df["P_gumbel_finite"])
 
-    # Calculando e retornando o coeficiente de determinação (R²)
     r2_gumbel_finite = corr_gumbel_finite ** 2
     r2_gumbel_finite = r2_gumbel_finite.round(4)
 
@@ -94,6 +138,17 @@ def dist_gumbel_finite(df, params):
 
 
 def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
+    """
+    Function to perform various distribution calculations.
+    Args:
+        no_oulier_data (DataFrame): The processed dataframe with no outliers.
+        sigmaN (float): The sigmaN value.
+        yn (float): The yn value.
+        sample_size (int): The size of the sample.
+    Returns:
+        tuple: Returns a tuple containing the processed dataframe, parameters, and dist_r2 dictionary.
+    """
+
     Pmax_anual = no_oulier_data["Pmax_anual"]
 
     no_oulier_data["F"] = (no_oulier_data.index + 1) / (sample_size + 1)
@@ -158,6 +213,15 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
 
 
 def main(no_oulier_data, table_yn_sigman):
+    """
+    Main function to perform various calculations.
+    Args:
+        no_oulier_data (DataFrame): The processed dataframe with no outliers.
+        table_yn_sigman (DataFrame): The dataframe containing yn and sigmaN values.
+    Returns:
+        tuple: Returns a tuple containing the parameters and dist_r2 dictionary.
+    """
+
     sample_size = len(no_oulier_data)
 
     sigmaN, yn = yn_sigman_calculation(table_yn_sigman, sample_size)

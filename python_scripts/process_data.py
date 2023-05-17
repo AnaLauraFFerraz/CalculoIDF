@@ -3,13 +3,28 @@ import numpy as np
 
 
 def process_raw_data(df):
+    """
+    Function to process the raw data by converting the 'Data' column to datetime and sorting the dataframe.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+    Returns:
+        DataFrame: Returns the processed dataframe.
+    """
+
     df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y')
     df = df.sort_values(by='Data', ascending=True)
     return df
 
 
 def get_consistent_data(df):
-    # Retorna os dados com NivelConsistencia == 2
+    """
+    Function to return data with a consistency level of 2, resampled by the start of each month.
+    Args:
+        df (DataFrame): The dataframe to be filtered.
+    Returns:
+        DataFrame: Returns the filtered and resampled dataframe.
+    """
+
     consistent_data = df.loc[df['NivelConsistencia']
                              == 2, ["Data", "Maxima"]].copy()
 
@@ -26,7 +41,14 @@ def get_consistent_data(df):
 
 
 def get_raw_data(df):
-    # Retorna os dados com NivelConsistencia == 1
+    """
+    Function to return raw data with a consistency level of 1, resampled by the start of each month.
+    Args:
+        df (DataFrame): The dataframe to be filtered.
+    Returns:
+        DataFrame: Returns the filtered and resampled dataframe.
+    """
+
     raw_data = df.loc[df['NivelConsistencia'] == 1, [
         "Data", "Maxima"]].reset_index(drop=True)
 
@@ -39,10 +61,19 @@ def get_raw_data(df):
 
 
 def merge_and_fill_data(consistent_data, raw_data):
-    # Encontra a última data nos dois DataFrames
+    """
+    Function to merge the consistent and raw data, and fill in missing values.
+    Args:
+        consistent_data (DataFrame): The consistent data dataframe.
+        raw_data (DataFrame): The raw data dataframe.
+    Returns:
+        DataFrame: Returns the merged dataframe with filled missing values.
+    """
+
+    # Find last date in both DataFrames
     last_date = min(consistent_data['Data'].max(), raw_data['Data'].max())
 
-    # Filtra os DataFrames até a última data
+    # Filter DataFrames until last date
     consistent_data = consistent_data.loc[consistent_data['Data'] <= last_date]
     raw_data = raw_data.loc[raw_data['Data'] <= last_date]
 
@@ -58,6 +89,14 @@ def merge_and_fill_data(consistent_data, raw_data):
 
 
 def remove_out_of_cycle_data(df):
+    """
+    Function to remove data that falls outside of the hydrological cycle (October to September).
+    Args:
+        df (DataFrame): The dataframe to be filtered.
+    Returns:
+        DataFrame: Returns the filtered dataframe.
+    """
+
     index_first_sep = df.loc[df['Data'].dt.month == 9].index[0]
     index_last_oct = df.loc[df['Data'].dt.month == 10].index[-1]
     index_last = df.shape[0] - 1
@@ -74,8 +113,17 @@ def remove_out_of_cycle_data(df):
 
 
 def add_hydrological_year(df):
+    """
+    Function to add a new column for the hydrological year and group the data by the maxima per hydrological year.
+    Args:
+        df (DataFrame): The dataframe to be processed.
+    Returns:
+        DataFrame: Returns the dataframe with the new 'AnoHidrologico' and 'ln_Pmax_anual' columns.
+    """
+
     df["AnoHidrologico"] = df["Data"].dt.year.where(
         df["Data"].dt.month >= 10, df["Data"].dt.year - 1)
+    # df.to_csv('hydrological_year_data.csv', sep=',')
 
     hydrological_year_df = df.groupby("AnoHidrologico")["Maxima"].max(
     ).reset_index().rename(columns={"Maxima": "Pmax_anual"})
@@ -90,6 +138,15 @@ def add_hydrological_year(df):
 
 
 def main(raw_df):
+    """
+    Main function to process the raw data, get consistent and raw data, merge and fill the data, 
+    remove out of cycle data, and add a hydrological year.
+    Args:
+        raw_df (DataFrame): The raw dataframe to be processed.
+    Returns:
+        DataFrame: Returns the processed dataframe grouped by the maxima per hydrological year.
+    """
+
     raw_df = raw_df.fillna(0)
     rain_data = process_raw_data(raw_df)
 
@@ -109,7 +166,7 @@ def main(raw_df):
     if hydrological_year_data.shape[0] < 10:
         hydrological_year_data.drop(hydrological_year_data.index, inplace=True)
         return hydrological_year_data
-    
+
     # print("\hydrological_year_data\n", hydrological_year_data)
     # hydrological_year_data.to_csv('hydrological_year_data.csv', sep=',')
 
