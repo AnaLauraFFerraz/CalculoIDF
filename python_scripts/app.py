@@ -53,8 +53,8 @@ def main(csv_file_path):
 
     if processed_data.empty:
         insufficient_data = "Dados não são sufientes para completar a análise"
-        with open('idf_data.json', 'w', encoding='utf-8') as f:
-            json.dump(insufficient_data, f)
+        with open('idf_data.json', 'w', encoding='utf-8') as file:
+            json.dump(insufficient_data, file)
         return json.dumps(insufficient_data)
 
     no_outlier = teste_outlier(processed_data, gb_test)
@@ -81,13 +81,13 @@ def main(csv_file_path):
     return output
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Por favor, forneça o caminho do arquivo CSV como argumento")
-    else:
-        csv_file_path = sys.argv[1]
-        main(csv_file_path)
-
 # if __name__ == "__main__":
-#     csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
-#     main(csv_file_path)
+#     if len(sys.argv) < 2:
+#         print("Por favor, forneça o caminho do arquivo CSV como argumento")
+#     else:
+#         csv_file_path = sys.argv[1]
+#         main(csv_file_path)
+
+if __name__ == "__main__":
+    csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+    main(csv_file_path)

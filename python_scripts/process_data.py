@@ -76,14 +76,19 @@ def merge_and_fill_data(consistent_data, raw_data):
     # Filter DataFrames until last date
     consistent_data = consistent_data.loc[consistent_data['Data'] <= last_date]
     raw_data = raw_data.loc[raw_data['Data'] <= last_date]
+    # print("\nconsistent_data: ", raw_data)
 
     merged_df = pd.merge(consistent_data, raw_data,
                          on="Data", how="left", suffixes=('', '_y'))
 
-    merged_df['Maxima'].fillna(merged_df['Maxima_y'], inplace=True)
+    condition = (merged_df['Maxima'].isna()) | (merged_df['Maxima'] == 0)
+    merged_df.loc[condition, 'Maxima'] = merged_df.loc[condition, 'Maxima_y']
+
+    # merged_df['Maxima'].fillna(merged_df['Maxima_y'], inplace=True)
     merged_df.drop('Maxima_y', axis=1, inplace=True)
 
     merged_df['Maxima'].fillna(0, inplace=True)
+    merged_df.loc[merged_df['Maxima'] == 0, 'Maxima'] = 0
 
     return merged_df
 
@@ -123,7 +128,6 @@ def add_hydrological_year(df):
 
     df["AnoHidrologico"] = df["Data"].dt.year.where(
         df["Data"].dt.month >= 10, df["Data"].dt.year - 1)
-    # df.to_csv('hydrological_year_data.csv', sep=',')
 
     hydrological_year_df = df.groupby("AnoHidrologico")["Maxima"].max(
     ).reset_index().rename(columns={"Maxima": "Pmax_anual"})
@@ -167,7 +171,7 @@ def main(raw_df):
         hydrological_year_data.drop(hydrological_year_data.index, inplace=True)
         return hydrological_year_data
 
-    # print("\hydrological_year_data\n", hydrological_year_data)
     # hydrological_year_data.to_csv('hydrological_year_data.csv', sep=',')
+    # print("\hydrological_year_data\n", hydrological_year_data)
 
     return hydrological_year_data
