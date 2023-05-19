@@ -3,6 +3,44 @@ from scipy.special import gammaincinv
 from scipy.stats import norm, stats, skew
 
 
+def params_calculation(df, sigmaN, yn, sample_size):
+    """
+    Calculates and returns a set of parameters derived from the input dataframe.
+    Args:
+        df (DataFrame): Input DataFrame containing the columns "Pmax_anual" and "P_log".
+        sigmaN (float): The standard deviation of the normal distribution.
+        yn (float): The mean of the normal distribution.
+        sample_size (int): Size of the sample data.
+    Returns:
+        dict: A dictionary containing statistical parameters.
+    """
+
+    mean = df["Pmax_anual"].mean()
+    std_dev = df["Pmax_anual"].std()
+    meanw = df["P_log"].mean()
+    std_devw = df["P_log"].std()
+    g = skew(df["Pmax_anual"])
+    alpha = 4/g**2
+    gw = skew(df['P_log'])
+    alphaw = 4/gw**2
+
+    params = {
+        "size": sample_size,
+        "mean": mean,
+        "std_dev": std_dev,
+        "g": g,
+        "alpha": alpha,
+        "meanw": meanw,
+        "stdw": std_devw,
+        "gw": gw,
+        "alphaw": alphaw,
+        "sigman": sigmaN,
+        "yn": yn
+    }
+
+    return params
+
+
 def yn_sigman_calculation(df, sample_size):
     """
     Function to get 'sigmaN' and 'YN' values from the dataframe based on the sample size.
@@ -149,36 +187,13 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
         tuple: Returns a tuple containing the processed dataframe, parameters, and dist_r2 dictionary.
     """
 
-    Pmax_anual = no_oulier_data["Pmax_anual"]
-
     no_oulier_data["F"] = (no_oulier_data.index + 1) / (sample_size + 1)
     no_oulier_data["F"] = no_oulier_data["F"].round(4)
     no_oulier_data["one_minus_F"] = 1 - no_oulier_data["F"]
     no_oulier_data["KN"] = norm.ppf(1 - no_oulier_data["F"])
     no_oulier_data["P_log"] = np.log10(no_oulier_data["Pmax_anual"])
 
-    mean = Pmax_anual.mean()
-    std_dev = Pmax_anual.std()
-    meanw = no_oulier_data["P_log"].mean()
-    std_devw = no_oulier_data["P_log"].std()
-    g = skew(no_oulier_data["Pmax_anual"])
-    alpha = 4/g**2
-    gw = skew(no_oulier_data['P_log'])
-    alphaw = 4/gw**2
-
-    params = {
-        "size": sample_size,
-        "mean": mean,
-        "std_dev": std_dev,
-        "g": g,
-        "alpha": alpha,
-        "meanw": meanw,
-        "stdw": std_devw,
-        "gw": gw,
-        "alphaw": alphaw,
-        "sigman": sigmaN,
-        "yn": yn
-    }
+    params = params_calculation(no_oulier_data, sigmaN, yn, sample_size)
     # print(params)
 
     r2_log_normal = dist_log_normal(no_oulier_data, params)
@@ -200,10 +215,10 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
     }
     # print(distributions)
 
-    # max_dist = max(distributions, key=distributions.get)
-    # max_r2 = distributions[max_dist]
-    max_dist = "r2_gumbel_finite"
-    max_r2 = distributions["r2_gumbel_finite"]
+    max_dist = max(distributions, key=distributions.get)
+    max_r2 = distributions[max_dist]
+    # max_dist = "r2_gumbel_finite"
+    # max_r2 = distributions["r2_gumbel_finite"]
 
     dist_r2 = {"max_dist": max_dist,
                "max_value_r2": max_r2}
@@ -231,4 +246,4 @@ def main(no_oulier_data, table_yn_sigman):
 
     # no_oulier_data.to_csv('no_outliers_data.csv', sep=',')
 
-    return params, dist_r2
+    return no_oulier_data, params, dist_r2

@@ -59,24 +59,18 @@ def main(csv_file_path):
 
     no_outlier = teste_outlier(processed_data, gb_test)
 
-    params, dist_r2 = distributions(
+    distribution_data, params, dist_r2 = distributions(
         no_outlier, table_yn_sigman)
 
     disaggregation_data, time_interval = disaggregation_coef()
 
     k_coefficient_data = k_coefficient(params, dist_r2)
 
-    output = ventechow(k_coefficient_data,
+    output = ventechow(distribution_data, k_coefficient_data,
                        disaggregation_data, params, time_interval, dist_r2)
 
     with open('output.json', 'w', encoding='utf-8') as json_file:
         json.dump(output, json_file)
-
-    # with open('idf_data.json', 'w', encoding='utf-8') as f:
-    #     json.dump(output_dict, f)
-
-    # print("\nJSON gerado:")
-    # print(json.dumps(output, json_file))
 
     return output
 
