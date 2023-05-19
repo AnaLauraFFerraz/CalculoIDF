@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
+import pprint
 
 
 def ventechow_calculations(k_coefficient_data, coefficients, params, time_interval, dist_r2):
@@ -183,12 +184,48 @@ def recalculate_dataframe(df, parameters_1, parameters_2):
             row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
         axis=1
     )
+
     df = add_relative_error(df)
-    mean_relative_error = df["erro_relativo"].mean()
-    return mean_relative_error, df
+
+    df_interval_1 = df[df["condition"] == 1]
+    df_interval_2 = df[df["condition"] == 2]
+
+    mean_relative_error_1 = df_interval_1["erro_relativo"].mean()
+    mean_relative_error_2 = df_interval_2["erro_relativo"].mean()
+
+    # Retornar um dicionário contendo os erros relativos médios para cada intervalo de tempo
+    mean_relative_errors = {
+        "interval_1": mean_relative_error_1,
+        "interval_2": mean_relative_error_2
+    }
+
+    # mean_relative_error = df["erro_relativo"].mean()
+    # return mean_relative_error, df
+
+    return mean_relative_errors, df
 
 
-def main(k_coefficient_data, disaggregation_data, params, time_interval, dist_r2):
+def print_formatted_output(output):
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(output)
+
+
+def find_P_max_dist(df, dist_r2):
+    if dist_r2["max_dist"] == 'r2_log_normal':
+        P_dist = "P_log_normal"
+    elif dist_r2["max_dist"] == 'r2_pearson':
+        P_dist = "P_pearson"
+    elif dist_r2["max_dist"] == 'r2_log_pearson':
+        P_dist = "P_log_pearson"
+    elif dist_r2["max_dist"] == 'r2_gumbel_theo':
+        P_dist = "P_gumbel_theoretical"
+    elif dist_r2["max_dist"] == 'r2_gumbel_finite':
+        P_dist = "P_gumbel_finite"
+
+    return P_dist
+
+
+def main(distribution_data, k_coefficient_data, disaggregation_data, params, time_interval, dist_r2):
     """
     Main function to calculate optimal parameters and recalculate the DataFrame.
     Args:
@@ -217,20 +254,23 @@ def main(k_coefficient_data, disaggregation_data, params, time_interval, dist_r2
     k_opt1, m_opt1, c_opt1, n_opt1 = optimize_parameters(transformed_df, 1)
     k_opt2, m_opt2, c_opt2, n_opt2 = optimize_parameters(transformed_df, 2)
 
-    print(
-        f"\nValores otimizados para td de 5 a 60 minutos: k1={k_opt1}, m1={m_opt1}, c1={c_opt1}, n1={n_opt1}")
-    print(
-        f"\nValores otimizados para td acima de 60 minutos: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
+    # print(f"\ntd de 5 a 60 minutos: k1={k_opt1}, m1={m_opt1}, c1={c_opt1}, n1={n_opt1}")
+    # print(f"\ntd acima de 60 minutos: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
 
-    erro_relativo_medio, transformed_df = recalculate_dataframe(
+    mean_relative_errors, transformed_df = recalculate_dataframe(
         transformed_df, (k_opt1, m_opt1, c_opt1, n_opt1), (k_opt2, m_opt2, c_opt2, n_opt2))
 
-    print(f"\nErro relativo médio: {erro_relativo_medio}")
+    # print(f"\nErro relativo médio: {erro_relativo_medio}")
+    # print("\ntransformed_df :\n", transformed_df)
 
-    print("\ntransformed_df :\n", transformed_df)
+    P_dist = find_P_max_dist(distribution_data, dist_r2)
 
     output = {
-        "graph_data": transformed_df[["Tr (anos)", "i_real"]].values.tolist(),
+        "graph_data": {
+            "Tr (anos)": transformed_df["Tr (anos)"].values.tolist(),
+            "i_real": transformed_df["i_real"].values.tolist(),
+            "P_dist": P_dist
+        },
         "parameters": {
             "parameters_1": {
                 "k1": k_opt1,
@@ -245,9 +285,11 @@ def main(k_coefficient_data, disaggregation_data, params, time_interval, dist_r2
                 "n2": n_opt2
             }
         },
+        "mean_relative_errors": mean_relative_errors,
         "sample_size_above_30_years": params['size'] >= 30
     }
 
+    # print_formatted_output(output)
     # transformed_df.to_csv('transformed_df.csv', sep=',')
 
     return output
