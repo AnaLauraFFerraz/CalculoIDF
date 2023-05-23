@@ -1,20 +1,18 @@
 import pandas as pd
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import least_squares, minimize
 import pprint
 
 
 def ventechow_calculations(k_coefficient_data, coefficients, params, time_interval, dist_r2):
     """
     Calculates the initial rainfall intensity values for different return periods and time intervals.
-    Args:
-        k_coefficient_data (DataFrame): DataFrame containing k coefficient data.
+    Args: k_coefficient_data (DataFrame): DataFrame containing k coefficient data.
         coefficients (dict): Coefficients for different time intervals.
         params (dict): Parameters for the distribution.
         time_interval (dict): Time intervals for calculations.
         dist_r2 (dict): A dictionary containing information about the type of distribution.
-    Returns:
-        DataFrame: DataFrame with the calculated rainfall intensity values.
+    Returns: DataFrame: DataFrame with the calculated rainfall intensity values.
     """
 
     ventechow = pd.DataFrame()
@@ -40,12 +38,10 @@ def ventechow_calculations(k_coefficient_data, coefficients, params, time_interv
 def transform_dataframe(ventechow, coefficients, time_interval):
     """
     Transforms the original DataFrame to facilitate the calculation of the relative error.
-    Args:
-        ventechow (DataFrame): DataFrame containing calculated rainfall intensity values.
+    Args: ventechow (DataFrame): DataFrame containing calculated rainfall intensity values.
         coefficients (dict): Coefficients for different time intervals.
         time_interval (dict): Time intervals for calculations.
-    Returns:
-        DataFrame: Transformed DataFrame with the appropriate format for calculating relative error.
+    Returns: Transformed DataFrame with the appropriate format for calculating relative error.
     """
 
     rows = [
@@ -71,40 +67,67 @@ def add_condition(df):
     return df
 
 
-def calculate_i(row, parameters):
-    """
-    Calculates the estimated rainfall intensity.
-    Args:
-        row (Series): A row of the DataFrame.
-        parameters (tuple): Parameters for the Ven Te Chow equation.
-    Returns:
-        float: Calculated rainfall intensity.
-    """
+# def calculate_i(row, parameters):
+#     """
+#     Calculates the estimated rainfall intensity.
+#     Args:
+#         row (Series): A row of the DataFrame.
+#         parameters (tuple): Parameters for the Ven Te Chow equation.
+#     Returns:
+#         float: Calculated rainfall intensity.
+#     """
 
-    k, m, c, n = parameters
-    result = (k * row["Tr (anos)"] ** m) / ((c + row["td (min)"]) ** n)
-    # Use np.where para condição vetorizada
+#     k, m, c, n = parameters
+#     result = (k * row["Tr (anos)"] ** m) / ((c + row["td (min)"]) ** n)
+#     # Use np.where para condição vetorizada
+#     result = np.where(np.isfinite(result), result, 0)
+
+#     return result
+
+def calculate_i(params, Tr, td):
+    k, m, c, n = params
+    result = (k * Tr ** m) / ((c + td) ** n)
     result = np.where(np.isfinite(result), result, 0)
     return result
 
+# def print_calculate_i_statistics(df, parameters_1, parameters_2):
+#     df['temp_i'] = df.apply(
+#         lambda row: calculate_i(
+#             row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
+#         axis=1
+#     )
+#     print(
+#         f"calculate_i min: {df['temp_i'].min()}, max: {df['temp_i'].max()}, mean: {df['temp_i'].mean()}")
+#     df.drop(columns=['temp_i'], inplace=True)
+
 
 def apply_i_calculated(df, parameters_1, parameters_2):
-    """
-    Applies the Ven Te Chow equation to calculate the estimated rainfall intensity (i_calculated) for each row.
-    Args:
-        df (DataFrame): DataFrame with the data.
-        parameters_1 (tuple): Parameters for the Ven Te Chow equation for condition 1.
-        parameters_2 (tuple): Parameters for the Ven Te Chow equation for condition 2.
-    Returns:
-        DataFrame: DataFrame with the added i_calculated column.
-    """
-
     df["i_calculado"] = df.apply(
-        lambda row: calculate_i(
-            row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
+        lambda row: calculate_i(parameters_1, row['Tr (anos)'], row['td (min)']) if row["condition"] == 1 else calculate_i(
+            parameters_2, row['Tr (anos)'], row['td (min)']),
         axis=1
     )
     return df
+
+# def apply_i_calculated(df, parameters_1, parameters_2):
+    # """
+    # Applies the Ven Te Chow equation to calculate the estimated rainfall intensity (i_calculated) for each row.
+    # Args:
+    #     df (DataFrame): DataFrame with the data.
+    #     parameters_1 (tuple): Parameters for the Ven Te Chow equation for condition 1.
+    #     parameters_2 (tuple): Parameters for the Ven Te Chow equation for condition 2.
+    # Returns:
+    #     DataFrame: DataFrame with the added i_calculated column.
+    # """
+
+    # df["i_calculado"] = df.apply(
+    #     lambda row: calculate_i(
+    #         row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
+    #     axis=1
+    # )
+    # print(
+    #     f"i_calculado min: {df['i_calculado'].min()}, max: {df['i_calculado'].max()}, mean: {df['i_calculado'].mean()}")
+    # return df
 
 
 def add_relative_error(df):
@@ -118,25 +141,32 @@ def add_relative_error(df):
 
     df["erro_relativo"] = abs(
         (df["i_calculado"] - df["i_real"]) / df["i_real"]) * 100
+    print(
+        f"erro_relativo min: {df['erro_relativo'].min()}, max: {df['erro_relativo'].max()}, mean: {df['erro_relativo'].mean()}")
+
     return df
 
 
-def objective_function(params, df):
-    """
-    Defines the objective function for optimization.
-    Args:
-        params (tuple): Parameters for the Ven Te Chow equation.
-        df (DataFrame): DataFrame with the data.
-    Returns:
-        float: Sum of the relative errors.
-    """
+def objective_function(params, Tr, td, i_real):
+    i_calculado = calculate_i(params, Tr, td)
+    return i_calculado - i_real
 
-    df_temp = df.copy()
-    k, m, c, n = params
-    df_temp["i_calculado"] = calculate_i(df_temp, params)
-    df_temp["erro_relativo"] = abs(
-        (df_temp["i_calculado"] - df_temp["i_real"]) / df_temp["i_real"]) * 100
-    return df_temp["erro_relativo"].sum()
+# def objective_function(params, df):
+#     """
+#     Defines the objective function for optimization.
+#     Args:
+#         params (tuple): Parameters for the Ven Te Chow equation.
+#         df (DataFrame): DataFrame with the data.
+#     Returns:
+#         float: Sum of the relative errors.
+#     """
+
+#     df_temp = df.copy()
+#     k, m, c, n = params
+#     df_temp["i_calculado"] = calculate_i(df_temp, params)
+#     df_temp["erro_relativo"] = abs(
+#         (df_temp["i_calculado"] - df_temp["i_real"]) / df_temp["i_real"]) * 100
+#     return df_temp["erro_relativo"].sum()
 
 
 def optimize_parameters(df, condition):
@@ -150,7 +180,7 @@ def optimize_parameters(df, condition):
     """
 
     initial_guess = [500, 0.1, 10, 0.7]
-    bounds = [(100, 2000), (0, 3), (0, 100), (0, 10)]
+    bounds = [(50, 20000), (0, 10), (0, 1000), (0, 10)]
     df_condition = df[df['condition'] == condition]
 
     result = minimize(
@@ -179,9 +209,10 @@ def recalculate_dataframe(df, parameters_1, parameters_2):
     """
 
     df = df.copy()
+
     df["i_calculado"] = df.apply(
-        lambda row: calculate_i(
-            row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
+        lambda row: calculate_i(parameters_1, row['Tr (anos)'], row['td (min)']) if row["condition"] == 1 else calculate_i(
+            parameters_2, row['Tr (anos)'], row['td (min)']),
         axis=1
     )
 
@@ -199,9 +230,6 @@ def recalculate_dataframe(df, parameters_1, parameters_2):
         "interval_2": mean_relative_error_2
     }
 
-    # mean_relative_error = df["erro_relativo"].mean()
-    # return mean_relative_error, df
-
     return mean_relative_errors, df
 
 
@@ -210,7 +238,7 @@ def print_formatted_output(output):
     pp.pprint(output)
 
 
-def find_P_max_dist(df, dist_r2):
+def find_P_max_dist(dist_r2):
     if dist_r2["max_dist"] == 'r2_log_normal':
         P_dist = "P_log_normal"
     elif dist_r2["max_dist"] == 'r2_pearson':
@@ -244,18 +272,19 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
     transformed_df = transform_dataframe(
         ventechow_data, disaggregation_data, time_interval)
 
-    initial_parameters = (1000, 0.1, 10, 1)
+    # initial_parameters = (1000, 0.1, 10, 1)
     transformed_df = add_condition(transformed_df)
-    transformed_df = apply_i_calculated(
-        transformed_df, initial_parameters, initial_parameters)
-
-    transformed_df = add_relative_error(transformed_df)
 
     k_opt1, m_opt1, c_opt1, n_opt1 = optimize_parameters(transformed_df, 1)
+    print(
+        f"Optimized parameters for condition 1: k1={k_opt1}, m1={m_opt1}, c1={c_opt1}, n1={n_opt1}")
     k_opt2, m_opt2, c_opt2, n_opt2 = optimize_parameters(transformed_df, 2)
+    print(
+        f"Optimized parameters for condition 2: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
 
-    # print(f"\ntd de 5 a 60 minutos: k1={k_opt1}, m1={m_opt1}, c1={c_opt1}, n1={n_opt1}")
-    # print(f"\ntd acima de 60 minutos: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
+    transformed_df = apply_i_calculated(
+        transformed_df, (k_opt1, m_opt1, c_opt1, n_opt1), (k_opt2, m_opt2, c_opt2, n_opt2))
+    transformed_df = add_relative_error(transformed_df)
 
     mean_relative_errors, transformed_df = recalculate_dataframe(
         transformed_df, (k_opt1, m_opt1, c_opt1, n_opt1), (k_opt2, m_opt2, c_opt2, n_opt2))
@@ -263,7 +292,7 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
     # print(f"\nErro relativo médio: {erro_relativo_medio}")
     # print("\ntransformed_df :\n", transformed_df)
 
-    P_dist = find_P_max_dist(distribution_data, dist_r2)
+    P_dist = find_P_max_dist(dist_r2)
 
     output = {
         "graph_data": {
