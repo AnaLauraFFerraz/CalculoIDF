@@ -67,38 +67,11 @@ def add_condition(df):
     return df
 
 
-# def calculate_i(row, parameters):
-#     """
-#     Calculates the estimated rainfall intensity.
-#     Args:
-#         row (Series): A row of the DataFrame.
-#         parameters (tuple): Parameters for the Ven Te Chow equation.
-#     Returns:
-#         float: Calculated rainfall intensity.
-#     """
-
-#     k, m, c, n = parameters
-#     result = (k * row["Tr (anos)"] ** m) / ((c + row["td (min)"]) ** n)
-#     # Use np.where para condição vetorizada
-#     result = np.where(np.isfinite(result), result, 0)
-
-#     return result
-
 def calculate_i(params, Tr, td):
     k, m, c, n = params
     result = (k * Tr ** m) / ((c + td) ** n)
     result = np.where(np.isfinite(result), result, 0)
     return result
-
-# def print_calculate_i_statistics(df, parameters_1, parameters_2):
-#     df['temp_i'] = df.apply(
-#         lambda row: calculate_i(
-#             row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
-#         axis=1
-#     )
-#     print(
-#         f"calculate_i min: {df['temp_i'].min()}, max: {df['temp_i'].max()}, mean: {df['temp_i'].mean()}")
-#     df.drop(columns=['temp_i'], inplace=True)
 
 
 def apply_i_calculated(df, parameters_1, parameters_2):
@@ -108,26 +81,6 @@ def apply_i_calculated(df, parameters_1, parameters_2):
         axis=1
     )
     return df
-
-# def apply_i_calculated(df, parameters_1, parameters_2):
-    # """
-    # Applies the Ven Te Chow equation to calculate the estimated rainfall intensity (i_calculated) for each row.
-    # Args:
-    #     df (DataFrame): DataFrame with the data.
-    #     parameters_1 (tuple): Parameters for the Ven Te Chow equation for condition 1.
-    #     parameters_2 (tuple): Parameters for the Ven Te Chow equation for condition 2.
-    # Returns:
-    #     DataFrame: DataFrame with the added i_calculated column.
-    # """
-
-    # df["i_calculado"] = df.apply(
-    #     lambda row: calculate_i(
-    #         row, parameters_1) if row["condition"] == 1 else calculate_i(row, parameters_2),
-    #     axis=1
-    # )
-    # print(
-    #     f"i_calculado min: {df['i_calculado'].min()}, max: {df['i_calculado'].max()}, mean: {df['i_calculado'].mean()}")
-    # return df
 
 
 def add_relative_error(df):
@@ -148,52 +101,23 @@ def add_relative_error(df):
 
 
 def objective_function(params, Tr, td, i_real):
-    i_calculado = calculate_i(params, Tr, td)
-    return i_calculado - i_real
-
-# def objective_function(params, df):
-#     """
-#     Defines the objective function for optimization.
-#     Args:
-#         params (tuple): Parameters for the Ven Te Chow equation.
-#         df (DataFrame): DataFrame with the data.
-#     Returns:
-#         float: Sum of the relative errors.
-#     """
-
-#     df_temp = df.copy()
-#     k, m, c, n = params
-#     df_temp["i_calculado"] = calculate_i(df_temp, params)
-#     df_temp["erro_relativo"] = abs(
-#         (df_temp["i_calculado"] - df_temp["i_real"]) / df_temp["i_real"]) * 100
-#     return df_temp["erro_relativo"].sum()
+    k, m, c, n = params
+    i_calculated = (k * Tr ** m) / ((c + td) ** n)
+    i_calculated = np.where(np.isfinite(i_calculated), i_calculated, 0)
+    relative_error = abs((i_calculated - i_real) / i_real) * 100
+    return np.mean(relative_error)
 
 
-def optimize_parameters(df, condition):
-    """
-    Uses the L-BFGS-B algorithm to minimize the objective function and find the optimal parameters.
-    Args:
-        df (DataFrame): DataFrame with the data.
-        condition (int): Condition to filter the DataFrame.
-    Returns:
-        tuple: Optimal parameters for the Ven Te Chow equation.
-    """
-
-    initial_guess = [500, 0.1, 10, 0.7]
-    bounds = [(50, 20000), (0, 10), (0, 1000), (0, 10)]
-    df_condition = df[df['condition'] == condition]
-
+def optimize_parameters(df, initial_guess):
+    bounds = [(0, None), (0, None), (0, None), (0, None)]
     result = minimize(
         objective_function,
         initial_guess,
-        args=(df_condition,),
-        bounds=bounds,
-        method="L-BFGS-B"
+        args=(df['Tr (anos)'], df['td (min)'], df['i_real']),
+        method='SLSQP',
+        bounds=bounds
     )
-
-    k_opt, m_opt, c_opt, n_opt = result.x
-
-    return k_opt.round(4), m_opt.round(4), c_opt.round(4), n_opt.round(4)
+    return result.x
 
 
 def recalculate_dataframe(df, parameters_1, parameters_2):
