@@ -38,14 +38,8 @@ def load_data(csv_file_path):
 
 
 def main(csv_file_path):
-    """
-    Main function to process the data, test for outliers, determine the distribution, 
-    calculate the k coefficient, and calculate the Ven Te Chow parameters.
-    Args:
-        csv_file_path (str): Path of the CSV file to be processed.
-    Returns:
-        dict: Returns a dictionary with the calculated parameters and other relevant results.
-    """
+    """Main function to process the data, test for outliers, determine the distribution, 
+    calculate the k coefficient, and calculate the Ven Te Chow parameters."""
 
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
@@ -75,13 +69,13 @@ def main(csv_file_path):
     return output
 
 
-# if __name__ == "__main__":
-#     if len(sys.argv) < 2:
-#         print("Por favor, forneça o caminho do arquivo CSV como argumento")
-#     else:
-#         csv_file_path = sys.argv[1]
-#         main(csv_file_path)
-
 if __name__ == "__main__":
-    csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
-    main(csv_file_path)
+    if len(sys.argv) < 2:
+        print("Por favor, forneça o caminho do arquivo CSV como argumento")
+    else:
+        csv_file_path = sys.argv[1]
+        main(csv_file_path)
+
+# if __name__ == "__main__":
+#     csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+#     main(csv_file_path)
