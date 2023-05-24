@@ -20,30 +20,15 @@ def k_coeficient_calculation():
 
 # usar mesmo k da normal na log-normal
 def k_dist_log_normal_calc(k_coefficient, params):
-    """
-    Calculate the k coefficient for a log-normal distribution.
-    Args:
-        k_coefficient (DataFrame): DataFrame with the k coefficient values.
-        params (dict): Parameters for the log-normal distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient for a log-normal distribution."""
 
     k_coefficient["k"] = params["meanw"] + \
         norm.ppf(k_coefficient["no_exceedance"]) * params["stdw"]
-    k_coefficient["k"] = k_coefficient["k"].round(4)
-    return k_coefficient
+    return k_coefficient.round(4)
 
 
 def k_dist_pearson_calc(k_coefficient, params):
-    """
-    Calculate the k coefficient for a Pearson distribution.
-    Args:
-        k_coefficient (DataFrame): DataFrame with the k coefficient values.
-        params (dict): Parameters for the Pearson distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient for a Pearson distribution."""
 
     k_coefficient["YTR"] = gammaincinv(params["alpha"], k_coefficient["no_exceedance"]
                                        ) if params["alpha"] > 0 else gammaincinv(params["alpha"], k_coefficient["exceedance"])
@@ -51,19 +36,11 @@ def k_dist_pearson_calc(k_coefficient, params):
     k_coefficient["k"] = (params["g"] / 2) * \
         (k_coefficient["YTR"] - params["alpha"])
 
-    k_coefficient["k"] = k_coefficient["k"].round(4)
-    return k_coefficient
+    return k_coefficient.round(4)
 
 
 def k_dist_log_pearson_calc(k_coefficient, params):
-    """
-    Calculate the k coefficient for a log-Pearson distribution.
-    Args:
-        k_coefficient (DataFrame): DataFrame with the k coefficient values.
-        params (dict): Parameters for the log-Pearson distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient for a log-Pearson distribution."""
 
     k_coefficient["YTRw"] = gammaincinv(params["alphaw"], k_coefficient["no_exceedance"]
                                         ) if params["alphaw"] > 0 else gammaincinv(params["alphaw"], k_coefficient["exceedance"])
@@ -71,54 +48,29 @@ def k_dist_log_pearson_calc(k_coefficient, params):
     k_coefficient["k"] = (params["gw"] / 2) * \
         (k_coefficient["YTRw"] - params["alphaw"])
 
-    k_coefficient["k"] = k_coefficient["k"].round(4)
-    return k_coefficient
+    return k_coefficient.round(4)
 
 
 def k_dist_gumbel_theoretical_calc(k_coefficient):
-    """
-    Calculate the k coefficient for a theoretical Gumbel distribution.
-    Args:
-        k_coefficient (DataFrame): DataFrame with the k coefficient values.
-        params (dict): Parameters for the Gumbel distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient for a theoretical Gumbel distribution."""
 
     k_coefficient["y"] = -np.log(-np.log(k_coefficient["no_exceedance"]))
-
     k_coefficient["k"] = 0.7797 * k_coefficient["y"] - 0.45
-    k_coefficient["k"] = k_coefficient["k"].round(4)
-    return k_coefficient
+    return k_coefficient.round(4)
 
 
 def k_dist_gumbel_finite_calc(k_coefficient, params):
-    """
-    Calculate the k coefficient for a finite Gumbel distribution.
-    Args:
-        k_coefficient (DataFrame): DataFrame with the k coefficient values.
-        params (dict): Parameters for the finite Gumbel distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient for a finite Gumbel distribution."""
 
     k_coefficient["y"] = -np.log(-np.log(k_coefficient["no_exceedance"]))
-
     k_coefficient["k"] = (
         k_coefficient["y"] - params["yn"]) / params["sigman"]
 
-    return k_coefficient
+    return k_coefficient.round(4)
 
 
 def main(params, dist_r2):
-    """
-    Calculate the k coefficient values based on the type of distribution.
-    Args:
-        params (dict): Parameters for the distribution.
-        dist_r2 (dict): A dictionary containing information about the type of distribution.
-    Returns:
-        DataFrame: DataFrame with the updated k coefficient values.
-    """
+    """Calculate the k coefficient values based on the type of distribution."""
 
     k_coefficient = k_coeficient_calculation()
 
