@@ -27,7 +27,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
   const pythonAppPath = path.join(__dirname, '..', 'python_scripts', 'app.py');
   const csvFilePath = req.file.path;
-  const idfDataPath = path.join(__dirname, "..", 'idf_data.json');
+  const idfDataPath = path.join(__dirname, "..", 'output', 'idf_data.json');
 
   const pythonProcess = spawn('python', [pythonAppPath, csvFilePath]);
 

@@ -63,7 +63,7 @@ def main(csv_file_path):
     output = ventechow(distribution_data, k_coefficient_data,
                        disaggregation_data, params, time_interval, dist_r2)
 
-    with open('output.json', 'w', encoding='utf-8') as json_file:
+    with open('output/idf_data.json', 'w', encoding='utf-8') as json_file:
         json.dump(output, json_file)
 
     return output
