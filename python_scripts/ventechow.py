@@ -185,8 +185,7 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
 
     output = {
         "graph_data": {
-            "Tr (anos)": transformed_df["Tr (anos)"].values.tolist(),
-            "i_real": transformed_df["i_real"].values.tolist(),
+            "F": distribution_data["F"],
             "P_dist": P_dist
         },
         "parameters": {
@@ -207,6 +206,7 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
         "sample_size_above_30_years": params['size'] >= 30
     }
 
+    print(distribution_data)
     # print(ventechow_data)
     # print("\ntransformed_df :\n", transformed_df)
     # print_formatted_output(output)
