@@ -113,13 +113,12 @@ def recalculate_dataframe(df, parameters_1, parameters_2):
     mean_relative_error_1 = df_interval_1["erro_relativo"].mean()
     mean_relative_error_2 = df_interval_2["erro_relativo"].mean()
 
-    # Retornar um dicionário contendo os erros relativos médios para cada intervalo de tempo
+    # Retorna um dicionário contendo os erros relativos médios para cada intervalo de tempo
     mean_relative_errors = {
         "interval_1": mean_relative_error_1,
         "interval_2": mean_relative_error_2
     }
 
-    # mean_relative_error = df["erro_relativo"].mean()
     return mean_relative_errors, df_temp
 
 
@@ -156,7 +155,6 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
 
     ventechow_data = ventechow_calculations(
         k_coefficient_data, disaggregation_data, params, time_interval, dist_r2)
-    # print(ventechow_data)
 
     transformed_df = transform_dataframe(
         ventechow_data, disaggregation_data, time_interval)
@@ -168,7 +166,6 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
         transformed_df, initial_parameters, initial_parameters)
 
     transformed_df = add_relative_error(transformed_df)
-    print(transformed_df)
 
     k_opt1, m_opt1, c_opt1, n_opt1 = optimize_parameters(transformed_df, 1)
     k_opt2, m_opt2, c_opt2, n_opt2 = optimize_parameters(transformed_df, 2)
@@ -182,10 +179,10 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
         transformed_df, (k_opt1, m_opt1, c_opt1, n_opt1), (k_opt2, m_opt2, c_opt2, n_opt2))
 
     P_dist = find_P_max_dist(distribution_data, dist_r2)
-
+    
     output = {
         "graph_data": {
-            "F": distribution_data["F"],
+            "F": distribution_data["F"].tolist(),
             "P_dist": P_dist
         },
         "parameters": {
@@ -206,9 +203,6 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
         "sample_size_above_30_years": params['size'] >= 30
     }
 
-    print(distribution_data)
-    # print(ventechow_data)
-    # print("\ntransformed_df :\n", transformed_df)
     # print_formatted_output(output)
     # print(f"\nErro relativo médio: {erro_relativo_medio}")
     # transformed_df.to_csv('transformed_df.csv', sep=',')

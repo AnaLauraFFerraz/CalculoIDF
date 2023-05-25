@@ -41,13 +41,16 @@ def main(csv_file_path):
     """Main function to process the data, test for outliers, determine the distribution, 
     calculate the k coefficient, and calculate the Ven Te Chow parameters."""
 
+    output_dir = 'output'
+    os.makedirs(output_dir, exist_ok=True)
+    
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
     processed_data = process_data(raw_df)
 
     if processed_data.empty:
         insufficient_data = "Dados não são sufientes para completar a análise"
-        with open('idf_data.json', 'w', encoding='utf-8') as file:
+        with open(f'{output_dir}/idf_data.json', 'w', encoding='utf-8') as file:
             json.dump(insufficient_data, file)
         return json.dumps(insufficient_data)
 
@@ -63,7 +66,9 @@ def main(csv_file_path):
     output = ventechow(distribution_data, k_coefficient_data,
                        disaggregation_data, params, time_interval, dist_r2)
 
-    with open('output/idf_data.json', 'w', encoding='utf-8') as json_file:
+    
+
+    with open(f'{output_dir}/idf_data.json', 'w', encoding='utf-8') as json_file:
         json.dump(output, json_file)
 
     return output
