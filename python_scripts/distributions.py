@@ -1,5 +1,4 @@
 import numpy as np
-# from scipy.special import gamma
 from scipy.stats import norm, stats, gamma
 
 
@@ -51,7 +50,6 @@ def dist_log_normal(df, params):
     corr_log_normal, _ = stats.pearsonr(df["Pmax_anual"], df["P_log_normal"])
     r2_log_normal = corr_log_normal ** 2
     r2_log_normal = r2_log_normal.round(4)
-
     return r2_log_normal
 
 
@@ -83,13 +81,11 @@ def dist_log_pearson(df, params):
 
     df["KL_P"] = (params["gw"]/2)*(df['YTRw']-params["alphaw"])
     df["WTr_LP"] = params["meanw"] + params["stdw"] * df["KL_P"]
-
     df["P_log_pearson"] = np.power(10, df['WTr_LP'])
 
     corr_log_pearson, _ = stats.pearsonr(df["Pmax_anual"], df["P_log_pearson"])
     r2_log_pearson = corr_log_pearson ** 2
     r2_log_pearson = r2_log_pearson.round(4)
-    print(r2_log_pearson)
     return r2_log_pearson
 
 
@@ -97,9 +93,7 @@ def dist_gumbel_theoretical(df, params):
     """Function to calculate r2 for the theoretical Gumbel distribution."""
 
     df["y"] = df["one_minus_F"].apply(lambda x: -np.log(-np.log(x)))
-
     df["KG_T"] = 0.7797 * df["y"] - 0.45
-
     df["P_gumbel_theoretical"] = params["mean"] + \
         params["std_dev"] * df["KG_T"]
 
@@ -108,7 +102,6 @@ def dist_gumbel_theoretical(df, params):
 
     r2_gumbel_theo = corr_gumbel ** 2
     r2_gumbel_theo = r2_gumbel_theo.round(4)
-
     return r2_gumbel_theo
 
 
@@ -116,7 +109,6 @@ def dist_gumbel_finite(df, params):
     """Function to calculate r2 for the finite Gumbel distribution."""
 
     df["KG_F"] = (df["y"] - params["yn"]) / params["sigman"]
-
     df["P_gumbel_finite"] = params["mean"] + params["std_dev"] * df["KG_F"]
 
     corr_gumbel_finite, _ = stats.pearsonr(
@@ -124,7 +116,6 @@ def dist_gumbel_finite(df, params):
 
     r2_gumbel_finite = corr_gumbel_finite ** 2
     r2_gumbel_finite = r2_gumbel_finite.round(4)
-
     return r2_gumbel_finite
 
 
@@ -159,8 +150,8 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
 
     max_dist = max(distributions, key=distributions.get)
     max_r2 = distributions[max_dist]
-    # max_dist = "r2_log_pearson"
-    # max_r2 = distributions["r2_log_pearson"]
+    # max_dist = "r2_pearson"
+    # max_r2 = distributions["r2_pearson"]
 
     dist_r2 = {"max_dist": max_dist,
                "max_value_r2": max_r2}

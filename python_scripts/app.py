@@ -12,13 +12,7 @@ from ventechow import main as ventechow
 
 
 def load_data(csv_file_path):
-    """
-    Function to load the required data for further analysis.
-    Args:
-        csv_file_path (str): Path of the CSV file to be loaded.
-    Returns:
-        tuple: Returns a tuple containing the input data, Grubbs' test data, and YN SigmaN table data.
-    """
+    """Function to load the required data for further analysis."""
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,9 +35,9 @@ def main(csv_file_path):
     """Main function to process the data, test for outliers, determine the distribution, 
     calculate the k coefficient, and calculate the Ven Te Chow parameters."""
 
-    output_dir = 'output'
+    output_dir = 'CalculoIDF/output'
     os.makedirs(output_dir, exist_ok=True)
-    
+
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
     processed_data = process_data(raw_df)
@@ -58,6 +52,7 @@ def main(csv_file_path):
 
     distribution_data, params, dist_r2 = distributions(
         no_outlier, table_yn_sigman)
+    # distribution_data.to_csv('distribution_data.csv', sep=',')
 
     disaggregation_data, time_interval = disaggregation_coef()
 
@@ -65,8 +60,6 @@ def main(csv_file_path):
 
     output = ventechow(distribution_data, k_coefficient_data,
                        disaggregation_data, params, time_interval, dist_r2)
-
-    
 
     with open(f'{output_dir}/idf_data.json', 'w', encoding='utf-8') as json_file:
         json.dump(output, json_file)
@@ -82,5 +75,8 @@ if __name__ == "__main__":
         main(csv_file_path)
 
 # if __name__ == "__main__":
-#     csv_file_path = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+#     cv = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+#     pl = "CalculoIDF/python_scripts/csv/chuvas_C_01944009_PL.csv"
+#     ma = "CalculoIDF/python_scripts/csv/chuvas_C_02043032_MA.csv"
+#     csv_file_path = cv
 #     main(csv_file_path)

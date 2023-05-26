@@ -11,11 +11,11 @@ def ventechow_calculations(k_coefficient_data, coefficients, params, time_interv
     ventechow["Tr_anos"] = [2, 5, 10, 20, 30, 50, 75, 100]
 
     if dist_r2["max_dist"] == "r2_log_normal" or dist_r2["max_dist"] == "r2_log_pearson":
-        ventechow["1day"] = params["mean"] + \
-            k_coefficient_data["k"] * params["std_dev"]
-    else:
         ventechow["1day"] = params["meanw"] + \
             k_coefficient_data["k"] * params["stdw"]
+    else:
+        ventechow["1day"] = params["mean"] + \
+            k_coefficient_data["k"] * params["std_dev"]
 
     ventechow["24h"] = ventechow["1day"] * coefficients["24h"]
 
@@ -113,7 +113,6 @@ def recalculate_dataframe(df, parameters_1, parameters_2):
     mean_relative_error_1 = df_interval_1["erro_relativo"].mean()
     mean_relative_error_2 = df_interval_2["erro_relativo"].mean()
 
-    # Retorna um dicionário contendo os erros relativos médios para cada intervalo de tempo
     mean_relative_errors = {
         "interval_1": mean_relative_error_1,
         "interval_2": mean_relative_error_2
@@ -173,13 +172,13 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
     print(
         f"\ntd de 5 a 60 minutos: k1={k_opt1}, m1={m_opt1}, c1={c_opt1}, n1={n_opt1}")
     print(
-        f"\ntd acima de 60 minutos: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
+        f"td acima de 60 minutos: k2={k_opt2}, m2={m_opt2}, c2={c_opt2}, n2={n_opt2}")
 
     mean_relative_errors, transformed_df = recalculate_dataframe(
         transformed_df, (k_opt1, m_opt1, c_opt1, n_opt1), (k_opt2, m_opt2, c_opt2, n_opt2))
 
     P_dist = find_P_max_dist(distribution_data, dist_r2)
-    
+
     output = {
         "graph_data": {
             "F": distribution_data["F"].tolist(),
@@ -203,8 +202,9 @@ def main(distribution_data, k_coefficient_data, disaggregation_data, params, tim
         "sample_size_above_30_years": params['size'] >= 30
     }
 
+    print(transformed_df)
+    print(f"\nErro relativo médio: {mean_relative_errors}")
     # print_formatted_output(output)
-    # print(f"\nErro relativo médio: {erro_relativo_medio}")
     # transformed_df.to_csv('transformed_df.csv', sep=',')
 
     return output
