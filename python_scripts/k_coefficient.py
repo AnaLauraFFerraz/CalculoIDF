@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
-from scipy.special import gammaincinv
+from scipy.stats import norm, gamma
 
 
 def k_coeficient_calculation():
@@ -18,7 +17,6 @@ def k_coeficient_calculation():
     return k_coefficient
 
 
-# usar mesmo k da normal na log-normal
 def k_dist_log_normal_calc(k_coefficient, params):
     """Calculate the k coefficient for a log-normal distribution."""
 
@@ -30,8 +28,8 @@ def k_dist_log_normal_calc(k_coefficient, params):
 def k_dist_pearson_calc(k_coefficient, params):
     """Calculate the k coefficient for a Pearson distribution."""
 
-    k_coefficient["YTR"] = gammaincinv(params["alpha"], k_coefficient["no_exceedance"]
-                                       ) if params["alpha"] > 0 else gammaincinv(params["alpha"], k_coefficient["exceedance"])
+    k_coefficient['YTR'] = np.where(params["alpha"] > 0, gamma.ppf(k_coefficient["no_exceedance"],
+                                                                   params["alpha"], scale=1), gamma.ppf(k_coefficient["exceedance"], params["alpha"], scale=1))
 
     k_coefficient["k"] = (params["g"] / 2) * \
         (k_coefficient["YTR"] - params["alpha"])
@@ -42,8 +40,8 @@ def k_dist_pearson_calc(k_coefficient, params):
 def k_dist_log_pearson_calc(k_coefficient, params):
     """Calculate the k coefficient for a log-Pearson distribution."""
 
-    k_coefficient["YTRw"] = gammaincinv(params["alphaw"], k_coefficient["no_exceedance"]
-                                        ) if params["alphaw"] > 0 else gammaincinv(params["alphaw"], k_coefficient["exceedance"])
+    k_coefficient['YTRw'] = np.where(params["alphaw"] > 0, gamma.ppf(k_coefficient["no_exceedance"],
+                                                                     params["alphaw"], scale=1), gamma.ppf(k_coefficient["exceedance"], params["alphaw"], scale=1))
 
     k_coefficient["k"] = (params["gw"] / 2) * \
         (k_coefficient["YTRw"] - params["alphaw"])
@@ -85,5 +83,4 @@ def main(params, dist_r2):
     elif dist_r2["max_dist"] == 'r2_gumbel_finite':
         k = k_dist_gumbel_finite_calc(k_coefficient, params)
 
-    # print(k)
     return k
