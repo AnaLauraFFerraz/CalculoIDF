@@ -35,9 +35,6 @@ def main(csv_file_path):
     """Main function to process the data, test for outliers, determine the distribution, 
     calculate the k coefficient, and calculate the Ven Te Chow parameters."""
 
-    # output_dir = 'CalculoIDF/output'
-    # os.makedirs(output_dir, exist_ok=True)
-
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
     processed_data = process_data(raw_df)
@@ -74,3 +71,9 @@ if __name__ == "__main__":
         csv_file_path = sys.argv[1]
         main(csv_file_path)
 
+# if __name__ == "__main__":
+#     cv = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
+#     pl = "CalculoIDF/python_scripts/csv/chuvas_C_01944009_PL.csv"
+#     ma = "CalculoIDF/python_scripts/csv/chuvas_C_02043032_MA.csv"
+#     csv_file_path = cv
+#     main(csv_file_path)
