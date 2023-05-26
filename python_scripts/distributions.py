@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.special import gamma
-from scipy.stats import norm, stats
+# from scipy.special import gamma
+from scipy.stats import norm, stats, gamma
 
 
 def params_calculation(df, sigmaN, yn, sample_size):
@@ -59,11 +59,11 @@ def dist_pearson(df, params):
     """Function to calculate r2 for the Pearson distribution."""
 
     alpha = params["alpha"]
-    if params["gw"] > 0:
-        alpha = params["alphaw"]
+    # if params["gw"] > 0:
+    #     alpha = params["alphaw"]
 
-    df['YTR'] = np.where(alpha > 0, gammaincinv(
-        alpha, df['one_minus_F']), gammaincinv(alpha, df['F']))
+    df['YTR'] = np.where(alpha > 0, gamma.ppf(df["one_minus_F"],
+                         alpha, scale=1), gamma.ppf(df["F"], alpha, scale=1))
 
     df["KP"] = (params["g"]/2) * (df['YTR'] - alpha)
     df["P_pearson"] = params["mean"] + params["std_dev"] * df["KP"]
@@ -76,9 +76,10 @@ def dist_pearson(df, params):
 
 def dist_log_pearson(df, params):
     """Function to calculate r2 for the log-Pearson distribution."""
+    alphaw = params["alphaw"]
 
-    df["YTRw"] = np.where(params["alphaw"] > 0, gamma(
-        params["alphaw"], df['one_minus_F']), gamma(params["alphaw"], df['F']))
+    df['YTRw'] = np.where(alphaw > 0, gamma.ppf(df["one_minus_F"],
+                                                alphaw, scale=1), gamma.ppf(df["F"], alphaw, scale=1))
 
     df["KL_P"] = (params["gw"]/2)*(df['YTRw']-params["alphaw"])
     df["WTr_LP"] = params["meanw"] + params["stdw"] * df["KL_P"]
@@ -88,6 +89,7 @@ def dist_log_pearson(df, params):
     corr_log_pearson, _ = stats.pearsonr(df["Pmax_anual"], df["P_log_pearson"])
     r2_log_pearson = corr_log_pearson ** 2
     r2_log_pearson = r2_log_pearson.round(4)
+    print(r2_log_pearson)
     return r2_log_pearson
 
 
@@ -154,16 +156,14 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
         "r2_gumbel_theo": r2_gumbel_theo,
         "r2_gumbel_finite": r2_gumbel_finite
     }
-    print(distributions)
 
-    # max_dist = max(distributions, key=distributions.get)
-    # max_r2 = distributions[max_dist]
-    max_dist = "r2_log_pearson"
-    max_r2 = distributions["r2_log_pearson"]
+    max_dist = max(distributions, key=distributions.get)
+    max_r2 = distributions[max_dist]
+    # max_dist = "r2_log_pearson"
+    # max_r2 = distributions["r2_log_pearson"]
 
     dist_r2 = {"max_dist": max_dist,
                "max_value_r2": max_r2}
-    # print("\ndist_r2 ", dist_r2)
 
     return no_oulier_data, params, dist_r2
 
@@ -177,6 +177,9 @@ def main(no_oulier_data, table_yn_sigman):
 
     no_oulier_data, params, dist_r2 = dist_calculations(
         no_oulier_data, sigmaN, yn, sample_size)
-    # no_oulier_data.to_csv('no_outliers_data.csv', sep=',')
+
+    # print(params)
+    # print(distributions)
+    # print("\ndist_r2 ", dist_r2)
 
     return no_oulier_data, params, dist_r2
