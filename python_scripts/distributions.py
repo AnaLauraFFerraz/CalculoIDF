@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.special import gammaincinv
-from scipy.stats import norm, stats, skew
+from scipy.special import gamma
+from scipy.stats import norm, stats
 
 
 def params_calculation(df, sigmaN, yn, sample_size):
@@ -10,9 +10,11 @@ def params_calculation(df, sigmaN, yn, sample_size):
     std_dev = df["Pmax_anual"].std()
     meanw = df["P_log"].mean()
     std_devw = df["P_log"].std()
-    g = skew(df["Pmax_anual"])
+    g = (sample_size / ((sample_size - 1) * (sample_size - 2))) * \
+        np.sum(((df["Pmax_anual"] - mean) / std_dev) ** 3)
     alpha = 4/(g*g)
-    gw = skew(df['P_log'])
+    gw = (sample_size / ((sample_size - 1) * (sample_size - 2))) * \
+        np.sum(((df["P_log"] - meanw) / std_devw) ** 3)
     alphaw = 4/(gw*gw)
 
     params = {
@@ -30,6 +32,7 @@ def params_calculation(df, sigmaN, yn, sample_size):
     }
 
     return params
+
 
 def yn_sigman_calculation(df, sample_size):
     """Function to get 'sigmaN' and 'YN' values from the dataframe based on the sample size."""
@@ -54,6 +57,7 @@ def dist_log_normal(df, params):
 
 def dist_pearson(df, params):
     """Function to calculate r2 for the Pearson distribution."""
+
     alpha = params["alpha"]
     if params["gw"] > 0:
         alpha = params["alphaw"]
@@ -73,8 +77,8 @@ def dist_pearson(df, params):
 def dist_log_pearson(df, params):
     """Function to calculate r2 for the log-Pearson distribution."""
 
-    df["YTRw"] = np.where(params["alphaw"] > 0, gammaincinv(
-        params["alphaw"], df['one_minus_F']), gammaincinv(params["alphaw"], df['F']))
+    df["YTRw"] = np.where(params["alphaw"] > 0, gamma(
+        params["alphaw"], df['one_minus_F']), gamma(params["alphaw"], df['F']))
 
     df["KL_P"] = (params["gw"]/2)*(df['YTRw']-params["alphaw"])
     df["WTr_LP"] = params["meanw"] + params["stdw"] * df["KL_P"]
@@ -150,7 +154,7 @@ def dist_calculations(no_oulier_data, sigmaN, yn, sample_size):
         "r2_gumbel_theo": r2_gumbel_theo,
         "r2_gumbel_finite": r2_gumbel_finite
     }
-    # print(distributions)
+    print(distributions)
 
     # max_dist = max(distributions, key=distributions.get)
     # max_r2 = distributions[max_dist]
