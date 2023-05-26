@@ -35,8 +35,8 @@ def main(csv_file_path):
     """Main function to process the data, test for outliers, determine the distribution, 
     calculate the k coefficient, and calculate the Ven Te Chow parameters."""
 
-    output_dir = 'CalculoIDF/output'
-    os.makedirs(output_dir, exist_ok=True)
+    # output_dir = 'CalculoIDF/output'
+    # os.makedirs(output_dir, exist_ok=True)
 
     raw_df, gb_test, table_yn_sigman = load_data(csv_file_path)
 
@@ -44,7 +44,7 @@ def main(csv_file_path):
 
     if processed_data.empty:
         insufficient_data = "Dados não são sufientes para completar a análise"
-        with open(f'{output_dir}/idf_data.json', 'w', encoding='utf-8') as file:
+        with open('output/idf_data.json', 'w', encoding='utf-8') as file:
             json.dump(insufficient_data, file)
         return json.dumps(insufficient_data)
 
@@ -61,7 +61,7 @@ def main(csv_file_path):
     output = ventechow(distribution_data, k_coefficient_data,
                        disaggregation_data, params, time_interval, dist_r2)
 
-    with open(f'{output_dir}/idf_data.json', 'w', encoding='utf-8') as json_file:
+    with open('output/idf_data.json', 'w', encoding='utf-8') as json_file:
         json.dump(output, json_file)
 
     return output
@@ -74,9 +74,3 @@ if __name__ == "__main__":
         csv_file_path = sys.argv[1]
         main(csv_file_path)
 
-# if __name__ == "__main__":
-#     cv = "CalculoIDF/python_scripts/csv/chuvas_C_01844000_CV.csv"
-#     pl = "CalculoIDF/python_scripts/csv/chuvas_C_01944009_PL.csv"
-#     ma = "CalculoIDF/python_scripts/csv/chuvas_C_02043032_MA.csv"
-#     csv_file_path = cv
-#     main(csv_file_path)
