@@ -2,9 +2,9 @@ import express from "express"
 import cors from "cors"
 import multer from "multer"
 import fs from "fs"
-import { spawn } from "child_process"
 import path from "path"
 import { fileURLToPath } from "url"
+import axios from 'axios';
 import bucket from './firebase';
 
 const app = express();
@@ -12,7 +12,6 @@ app.use(cors());
 
 const upload = multer({ dest: 'uploads/' });
 
-// Converte o caminho do arquivo URL em um caminho de arquivo local
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -20,62 +19,24 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', upload.single('file'), async(req, res) => {
   if (!req.file) {
     res.status(400).send({ message: 'Nenhum arquivo foi enviado' });
     return;
   }
 
-  const pythonAppPath = path.join(__dirname, '..', 'python_scripts', 'main.py');
   const csvFilePath = req.file.path;
-  const idfDataPath = path.join(__dirname, "..", 'output', 'idf_data.json');
 
-  const pythonProcess = spawn('python', [pythonAppPath, csvFilePath]);
+  const functionUrl = 'https://us-central1-calculoidf.cloudfunctions.net/process_request';
 
-  let errorOccurred = false;
+  try {
+      const response = await axios.post(functionUrl, { csvFilePath });
+      console.log(`Response from Google Cloud Function: ${response.data}`);
+  } catch (error) {
+      console.error(`Error calling Google Cloud Function: ${error}`);
+  }
 
-  // Lida com erros ao executar o script Python
-  pythonProcess.stderr.once('data', (data) => {
-    console.error(`Erro ao executar o script Python: ${data}`);
-    errorOccurred = true;
-    res.status(500).send({ message: 'Erro ao executar o script Python' });
-  });
-
-  // Envia a resposta JSON ao cliente quando o script Python terminar
-  pythonProcess.on('close', (code) => {
-    if (errorOccurred) {
-      return;
-    }
-
-    if (code !== 0) {
-      console.error(`Erro após executar o script Python: ${code}`);
-      res.status(500).send({ message: 'Erro ao executar o script Python' });
-    } else {
-      fs.readFile(idfDataPath, (err, data) => {
-        if (err) {
-          console.error(`Erro ao ler o arquivo IDF Data: ${err}`);
-          res.status(500).send({ message: 'Erro ao ler o arquivo IDF Data' });
-        } else {
-          const idfData = JSON.parse(data);
-
-          res.status(200).send(idfData);
-        }
-
-        // Remove o arquivo CSV e IDF Data após o processamento
-        fs.unlink(csvFilePath, (err) => {
-          if (err) {
-            console.error(`Erro ao remover o arquivo CSV: ${err}`);
-          }
-        });
-
-        fs.unlink(idfDataPath, (err) => {
-          if (err) {
-            console.error(`Erro ao remover o arquivo IDF Data: ${err}`);
-          }
-        });
-      });
-    }
-  });
+  res.status(200).send({ message: 'Arquivo enviado com sucesso' });
 });
 
 const PORT = process.env.PORT || 5000;
