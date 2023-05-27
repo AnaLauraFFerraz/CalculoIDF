@@ -5,6 +5,7 @@ import fs from "fs"
 import { spawn } from "child_process"
 import path from "path"
 import { fileURLToPath } from "url"
+import bucket from './firebase';
 
 const app = express();
 app.use(cors());
@@ -25,7 +26,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
     return;
   }
 
-  const pythonAppPath = path.join(__dirname, '..', 'python_scripts', 'app.py');
+  const pythonAppPath = path.join(__dirname, '..', 'python_scripts', 'main.py');
   const csvFilePath = req.file.path;
   const idfDataPath = path.join(__dirname, "..", 'output', 'idf_data.json');
 
