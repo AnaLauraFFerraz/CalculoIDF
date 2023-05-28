@@ -9,4 +9,21 @@ admin.initializeApp({
 
 const bucket = admin.storage().bucket();
 
-export default bucket;
+async function uploadFile(filePath) {
+  await bucket.upload(filePath, {
+    gzip: true,
+    metadata: {
+      cacheControl: 'public, max-age=31536000',
+    },
+  });
+
+  console.log(`${filePath} uploaded to Firebase Storage.`);
+}
+
+async function deleteFile(filePath) {
+  await bucket.file(filePath).delete();
+
+  console.log(`File ${filePath} deleted from Firebase Storage.`);
+}
+
+export default { uploadFile, deleteFile };
