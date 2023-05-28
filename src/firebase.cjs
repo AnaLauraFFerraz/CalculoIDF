@@ -1,7 +1,8 @@
 const admin = require('firebase-admin');
+require('dotenv').config();
 
 // Parse the credentials from the environment variable
-const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTIALS, 'base64').toString());
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),

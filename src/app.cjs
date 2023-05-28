@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const axios = require('axios');
+require('dotenv').config();
+
 const firebase = require('./firebase.cjs');
 
 const app = express();
@@ -16,23 +18,40 @@ app.post('/upload', upload.single('file'), async(req, res) => {
   }
 
   const csvFilePath = `uploads/${req.file.originalname}`;
-
+  
   try {
     // Upload the file to Firebase Storage
-    await firebase.uploadFile(csvFilePath);
+    const file = bucket.file(csvFileName);
+    const stream = file.createWriteStream({
+      metadata: {
+        contentType: req.file.mimetype
+      }
+    });
 
-    const functionUrl = process.env.FUNCTION_URL;
+    stream.end(req.file.buffer);
 
-    // Call the Google Cloud Function with the path of the CSV file in Firebase Storage
-    const response = await axios.post(functionUrl, { csvFilePath });
+    stream.on('error', (error) => {
+      console.error(`Error: ${error}`);
+      res.status(500).send({ message: 'Ocorreu um erro ao fazer o upload do arquivo' });
+    });
 
-    console.log(`Response from Google Cloud Function: ${response.data}`);
+    stream.on('finish', async() => {
+      console.log(`${csvFileName} uploaded to Firebase Storage.`);
 
-    // Send the JSON received from the Google Cloud Function to the front-end
-    res.status(200).send(response.data);
+      const functionUrl = process.env.FUNCTION_URL;
 
-    // Remove the CSV file from Firebase Storage
-    await firebase.deleteFile(csvFilePath);
+      // Call the Google Cloud Function with the path of the CSV file in Firebase Storage
+      const bucketUrl = process.env.FIREBASE_STORAGE_BUCKET_URL;
+      const response = await axios.post(functionUrl, { csvFilePath: `${bucketUrl}/${csvFileName}` });
+
+      console.log(`Response from Google Cloud Function: ${response.data}`);
+
+      // Send the JSON received from the Google Cloud Function to the front-end
+      res.status(200).send(response.data);
+
+      // Remove the CSV file from Firebase Storage
+      await firebase.deleteFile(csvFileName);
+    });
   } catch (error) {
     console.error(`Error: ${error}`);
     res.status(500).send({ message: 'Ocorreu um erro ao processar o arquivo' });
