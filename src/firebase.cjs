@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 
-const serviceAccount = require('./credentials/calculoidf-firebase-adminsdk-lc7id-420d8fac04.json');
+// Parse the credentials from the environment variable
+const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
