@@ -3,7 +3,6 @@ const cors = require("cors");
 const multer = require("multer");
 const axios = require('axios');
 require('dotenv').config();
-
 const firebase = require('./firebase.cjs');
 
 const app = express();
@@ -21,7 +20,7 @@ app.post('/upload', upload.single('file'), async(req, res) => {
   
   try {
     // Upload the file to Firebase Storage
-    const file = bucket.file(csvFileName);
+    const file = firebase.bucket.file(csvFileName);
     const stream = file.createWriteStream({
       metadata: {
         contentType: req.file.mimetype

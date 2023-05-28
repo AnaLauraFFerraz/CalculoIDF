@@ -28,4 +28,4 @@ async function deleteFile(filePath) {
   console.log(`File ${filePath} deleted from Firebase Storage.`);
 }
 
-module.exports = { uploadFile, deleteFile };
+module.exports = { uploadFile, deleteFile, bucket };
