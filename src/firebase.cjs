@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin';
+const admin = require('firebase-admin');
 
 const serviceAccount = require('./credentials/calculoidf-firebase-adminsdk-lc7id-420d8fac04.json');
 
@@ -26,4 +26,4 @@ async function deleteFile(filePath) {
   console.log(`File ${filePath} deleted from Firebase Storage.`);
 }
 
-export default { uploadFile, deleteFile };
+module.exports = { uploadFile, deleteFile };

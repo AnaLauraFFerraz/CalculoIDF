@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
-import multer from "multer";
-import axios from 'axios';
-import firebase from './firebase';
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const axios = require('axios');
+const firebase = require('./firebase.cjs');
 
 const app = express();
 app.use(cors());
