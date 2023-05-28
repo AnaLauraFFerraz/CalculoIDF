@@ -16,7 +16,8 @@ app.post('/upload', upload.single('file'), async(req, res) => {
     return;
   }
 
-  const csvFilePath = `uploads/${req.file.originalname}`;
+  const csvFileName = req.file.originalname;
+  const csvFilePath = `uploads/${csvFileName}`;
   
   try {
     // Upload the file to Firebase Storage
