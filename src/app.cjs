@@ -42,7 +42,7 @@ app.post('/upload', upload.single('file'), async(req, res) => {
 
       // Call the Google Cloud Function with the path of the CSV file in Firebase Storage
       const bucketUrl = process.env.FIREBASE_STORAGE_BUCKET_URL;
-      const response = await axios.post(functionUrl, { csvFilePath: `${bucketUrl}/${csvFileName}` });
+      const response = await axios.post(functionUrl, { csv_file_url: `${bucketUrl}/${csvFileName}` });
 
       console.log(`Response from Google Cloud Function: ${response.data}`);
 
