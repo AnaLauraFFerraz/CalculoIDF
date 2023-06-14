@@ -1,30 +1,38 @@
-# Projeto de Otimização de Parâmetros em Hidrologia
+# Cálculo IDF - API
 
-Este projeto utiliza Python para otimizar os parâmetros de uma equação de hidrologia conhecida como equação de Ven Te Chow. A equação é usada para calcular a intensidade da chuva em diferentes intervalos de tempo e períodos de retorno.
+Esta API é parte de uma aplicação web para calcular a Intensidade-Duração-Frequência (IDF) a partir de dados de chuva. A API recebe um arquivo CSV com dados de chuva, faz upload do arquivo para o Firebase Storage, chama uma função do Google Cloud para calcular a IDF e retorna os resultados do cálculo.
 
-## Contexto
+## Funcionalidades
 
-A equação de Ven Te Chow é comumente usada em estudos de hidrologia para modelar a intensidade da chuva. Os parâmetros desta equação podem variar dependendo de diversos fatores, como a localização geográfica e o clima. Portanto, a otimização desses parâmetros é essencial para garantir que a equação forneça as estimativas mais precisas possíveis.
+- Receber um arquivo CSV com dados de chuva.
+- Fazer upload do arquivo CSV para o Firebase Storage.
+- Chamar uma função do Google Cloud para calcular a IDF.
+- Retornar os resultados do cálculo da IDF.
 
-## Metodologia
+## Tecnologias Utilizadas
 
-O projeto emprega diversas bibliotecas Python, incluindo `pandas`, `numpy` e `scipy`. O processo de otimização é realizado usando o algoritmo L-BFGS-B da biblioteca `scipy`.
+- Node.js para a criação da API.
+- Express para a criação do servidor e das rotas.
+- Multer para o tratamento de arquivos enviados em requisições multipart/form-data.
+- Axios para fazer requisições HTTP para a função do Google Cloud.
+- Firebase Admin SDK para interagir com o Firebase Storage.
 
-O código é organizado em várias funções, cada uma com um propósito específico:
+## Como Usar
 
-- `ventechow_calculations`: Calcula os valores iniciais de intensidade de chuva para diferentes períodos de retorno e intervalos de tempo.
-- `transform_dataframe`: Transforma o DataFrame original para facilitar o cálculo do erro relativo.
-- `add_condition`: Adiciona uma coluna ao DataFrame com uma condição baseada no intervalo de tempo.
-- `calculate_i`: Calcula a intensidade de chuva estimada.
-- `apply_i_calculated`: Aplica a equação de Ven Te Chow para calcular a intensidade de chuva estimada para cada linha.
-- `add_relative_error`: Adiciona uma coluna ao DataFrame com o erro relativo.
-- `objective_function`: Define a função objetivo que será minimizada durante a otimização.
-- `optimize_parameters`: Usa o algoritmo L-BFGS-B para minimizar a função objetivo e encontrar os parâmetros ótimos.
-- `recalculate_dataframe`: Recalcula o DataFrame com os parâmetros ótimos encontrados.
-- `main`: Função principal que reúne todas as funções acima e executa o processo de otimização.
+1. Clone este repositório para a sua máquina local.
+2. Instale as dependências do projeto com o comando `npm install`.
+3. Inicie a API com o comando `npm start`.
+4. A API estará disponível na porta especificada no arquivo `.env` ou na porta 5000 se nenhuma porta for especificada.
 
-## Como usar
+## Estrutura do Projeto
 
-1. Faça o clone do repositório.
-2. Instale as bibliotecas necessárias com `pip install -r requirements.txt`.
-3. Execute o script principal com `python
+- `src/app.cjs`: Este é o arquivo principal da API. Ele define a rota `/upload` para receber o arquivo CSV e iniciar o cálculo da IDF.
+- `src/firebase.cjs`: Este arquivo contém funções para interagir com o Firebase Storage.
+
+## Contribuindo
+
+Contribuições são sempre bem-vindas! Sinta-se à vontade para abrir uma issue ou fazer um pull request.
+
+## Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
