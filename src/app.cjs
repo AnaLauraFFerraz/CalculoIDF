@@ -4,11 +4,28 @@ const multer = require("multer");
 const axios = require('axios');
 require('dotenv').config();
 const firebase = require('./firebase.cjs');
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 app.use(cors());
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Limit the size of the incoming requests to 2MB
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
+
+// Apply rate limits to all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024 // limit file size to 2MB
+  }
+});
 
 app.post('/upload', upload.single('file'), async(req, res) => {
   if (!req.file) {
